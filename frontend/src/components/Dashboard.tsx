@@ -234,7 +234,7 @@ function Dashboard() {
         {/* ================= BANNIÈRE PUBLICITAIRE DYNAMIQUE ================= */}
         <section className="pt-6 px-4 max-w-7xl mx-auto">
           <div
-            className="relative w-full h-[360px] sm:h-[420px] rounded-3xl overflow-hidden shadow-lg border border-slate-100 group bg-slate-900"
+            className="relative w-full h-[180px] sm:h-[350px] rounded-xl overflow-hidden shadow-lg border border-slate-100 group bg-slate-900"
             onMouseEnter={() => setIsPaused(true)}
             onMouseLeave={() => setIsPaused(false)}
           >
@@ -263,11 +263,11 @@ function Dashboard() {
                       <div className={`absolute inset-0 bg-gradient-to-r ${slide.gradient}`} />
                       <div className="relative z-10 h-full flex flex-col justify-center px-6 sm:px-12 max-w-2xl text-white">
                         {slide.badge && (
-                          <span className="inline-block bg-indigo-600/90 backdrop-blur-md text-white text-[11px] font-extrabold uppercase tracking-widest px-3 py-1 rounded-full w-fit mb-3 border border-indigo-400/30">
+                          <span className="inline-block bg-indigo-600/90 backdrop-blur-md text-white mt-5 text-[11px] font-extrabold uppercase tracking-widest px-3 py-1 rounded-full w-fit mb-3 border border-indigo-400/30">
                             {slide.badge}
                           </span>
                         )}
-                        <h2 className="text-2xl sm:text-4xl font-black leading-tight tracking-tight drop-shadow-sm">
+                        <h2 className="text-lg sm:text-4xl font-black leading-tight tracking-tight drop-shadow-sm">
                           {slide.title}
                         </h2>
                         {slide.subtitle && (
@@ -323,7 +323,7 @@ function Dashboard() {
           </div>
 
           {/* ================= BARRE DE RECHERCHE FONCTIONNELLE ================= */}
-          <div className="flex justify-center -mt-6 relative z-20 px-4">
+          <div className="flex justify-center relative z-20 px-4 pt-6">
             <form
               onSubmit={handleSearchSubmit}
               className="flex items-center border pl-4 gap-2 bg-white border-gray-200 h-[48px] rounded-full shadow-lg focus-within:ring-2 focus-within:ring-indigo-500/50 overflow-hidden max-w-lg w-full transition-all"

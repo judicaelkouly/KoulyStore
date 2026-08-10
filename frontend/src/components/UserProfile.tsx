@@ -12,8 +12,8 @@ export interface UserData {
   city?: string;
   address?: string;
   avatarUrl?: string;
-  role?: string;       // 👈 Ajout du rôle
-  is_admin?: boolean;  // 👈 Support alternatif pour un booléen is_admin
+  role?: string;
+  is_admin?: boolean;
 }
 
 export interface OrderItemData {
@@ -24,16 +24,20 @@ export interface OrderItemData {
   name?: string;
   unit_price?: number;
   price?: number;
+  old_price?: number;
   quantity: number;
   size?: string;
   image?: string | any;
   image_url?: string | any;
+  image_path?: string | any;
   product?: {
     id?: string | number;
     title?: string;
     name?: string;
+    price?: number;
     image?: string | any;
     image_url?: string | any;
+    image_path?: string | any;
     images?: any[];
   };
 }
@@ -46,7 +50,13 @@ export interface UserOrder {
   total_price?: number;
   total_amount?: number;
   total?: number;
+  subtotal?: number;
+  shipping_fee?: number;
+  payment_method?: string;
+  shipping_address?: string;
+  shipping_method?: string;
   status: "Payé" | "En attente" | "Livré" | "Annulé" | string;
+  delivery_date_info?: string;
   items_count?: number;
   itemCount?: number;
   items?: OrderItemData[];
@@ -63,6 +73,7 @@ export interface CartItem {
   name?: string;
   image?: string | any;
   image_url?: string | any;
+  image_path?: string | any;
   product?: {
     id: string | number;
     title?: string;
@@ -70,6 +81,7 @@ export interface CartItem {
     price?: number;
     image?: string | any;
     image_url?: string | any;
+    image_path?: string | any;
     images?: any[];
   };
 }
@@ -85,6 +97,8 @@ function UserProfile() {
   const [cartTotal, setCartTotal] = useState<number>(0);
 
   const [activeTab, setActiveTab] = useState<"info" | "orders" | "cart">("info");
+  const [orderFilterTab, setOrderFilterTab] = useState<"active" | "cancelled">("active");
+  const [selectedOrder, setSelectedOrder] = useState<UserOrder | null>(null); // Pour afficher le détail de la commande
   const [isEditing, setIsEditing] = useState<boolean>(false);
 
   const [formData, setFormData] = useState<UserData>({
@@ -106,7 +120,6 @@ function UserProfile() {
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [imageError, setImageError] = useState<boolean>(false);
 
-  // Helper Cookie XSRF-TOKEN
   const getXsrfToken = () => {
     const cookies = document.cookie.split(";");
     for (let cookie of cookies) {
@@ -127,7 +140,6 @@ function UserProfile() {
     };
   };
 
-  // Guard Authentification & Redirection
   const checkAuthOrRedirect = (): boolean => {
     if (!isAuthenticated || !user?.id) {
       window.location.href = "/login";
@@ -136,53 +148,68 @@ function UserProfile() {
     return true;
   };
 
-  // Helper pour formater une chaîne/objet URL d'image vers Laravel Backend
-  const formatUrl = (pathCandidate?: any): string | null => {
-    if (!pathCandidate) return null;
+  // Traitement universel des chemins d'images
+ // Traitement universel et propre des URLs
+const formatUrl = (pathCandidate?: any): string | null => {
+  if (!pathCandidate) return null;
 
-    let target = pathCandidate;
-    if (typeof pathCandidate === "object" && pathCandidate !== null) {
-      target = pathCandidate.url || pathCandidate.path || pathCandidate.image_path || "";
+  let target = pathCandidate;
+
+  // Si c'est un objet (ex: { url: '...' } ou { path: '...' })
+  if (typeof pathCandidate === "object" && pathCandidate !== null) {
+    target = pathCandidate.url || pathCandidate.path || pathCandidate.image_path || pathCandidate.image || "";
+  }
+
+  if (!target || typeof target !== "string") return null;
+
+  // Si c'est déjà une URL absolue ou un blob/data
+  if (target.startsWith("http://") || target.startsWith("https://") || target.startsWith("blob:") || target.startsWith("data:")) {
+    return target;
+  }
+
+  // Nettoyage des slashes initiaux
+  let cleanPath = target.replace(/^\//, "");
+
+  // Si le chemin commence déjà par storage/, on ne le duplique pas
+  if (cleanPath.startsWith("storage/")) {
+    return `http://localhost:8000/${cleanPath}`;
+  }
+
+  return `http://localhost:8000/storage/${cleanPath}`;
+};
+
+const getItemImageUrl = (item: CartItem | OrderItemData): string | null => {
+  if (!item) return null;
+
+  // 1. Chercher d'abord dans l'objet item direct
+  let candidate = item.image_path || item.image_url || item.image;
+
+  // 2. Si non trouvé, chercher dans le produit associé (item.product)
+  if (!candidate && item.product) {
+    candidate =
+      item.product.image_path ||
+      item.product.image_url ||
+      item.product.image;
+
+    // 3. Cas où product.images est un tableau
+    if (!candidate && Array.isArray(item.product.images) && item.product.images.length > 0) {
+      candidate = item.product.images[0];
     }
+  }
 
-    if (!target || typeof target !== "string") return null;
+  return formatUrl(candidate);
+};
 
-    if (target.startsWith("http") || target.startsWith("blob:") || target.startsWith("data:")) {
-      return target;
-    }
-
-    const cleanPath = target.replace(/^\//, "").replace(/^storage\//, "");
-    return `http://localhost:8000/storage/${cleanPath}`;
-  };
-
-  // Helper pour récupérer l'image d'un article de panier ou de commande
-  const getItemImageUrl = (item: CartItem | OrderItemData): string | null => {
-    let candidate = item.image || item.image_url;
-
-    if (!candidate && item.product) {
-      candidate = item.product.image || item.product.image_url;
-
-      if (!candidate && Array.isArray(item.product.images) && item.product.images.length > 0) {
-        candidate = item.product.images[0];
-      }
-    }
-
-    return formatUrl(candidate);
-  };
-
-  // Helper pour l'URL de l'avatar
   const getAvatarUrl = (rawAvatar?: string | null): string | null => {
     return formatUrl(rawAvatar);
   };
 
-  // Chargement des données
   useEffect(() => {
     const fetchUserData = async () => {
       setLoading(true);
       setError(null);
 
       try {
-        // Profil
         const resProfile = await fetch("http://localhost:8000/api/profile", {
           method: "GET",
           headers: getCookieAuthHeaders(),
@@ -211,8 +238,8 @@ function UserProfile() {
             city: userData.city || "",
             address: userData.address || "",
             avatarUrl: formattedAvatar,
-            role: userData.role || "",           // 👈 Récupération du rôle
-            is_admin: Boolean(userData.is_admin), // 👈 Récupération du flag admin
+            role: userData.role || "",
+            is_admin: Boolean(userData.is_admin),
           };
 
           setUser(profileObj);
@@ -220,7 +247,6 @@ function UserProfile() {
           setIsAuthenticated(true);
         }
 
-        // Commandes
         const resOrders = await fetch("http://localhost:8000/api/user/orders", {
           method: "GET",
           headers: getCookieAuthHeaders(),
@@ -232,9 +258,9 @@ function UserProfile() {
           setOrders(
             Array.isArray(dataOrders) ? dataOrders : dataOrders.orders || dataOrders.data || []
           );
+          //console.log("Commandes récupérées:", dataOrders);
         }
 
-        // Panier
         const resCart = await fetch("http://localhost:8000/api/cart", {
           method: "GET",
           headers: getCookieAuthHeaders(),
@@ -272,7 +298,6 @@ function UserProfile() {
     fetchUserData();
   }, []);
 
-  // Déconnexion
   const handleLogout = async () => {
     setLoggingOut(true);
     setError(null);
@@ -303,7 +328,6 @@ function UserProfile() {
     }
   };
 
-  // Supprimer un article du panier
   const handleRemoveFromCart = async (cartItemId: string | number) => {
     if (!checkAuthOrRedirect()) return;
 
@@ -346,7 +370,6 @@ function UserProfile() {
     }
   };
 
-  // Redirection vers le paiement (/Checkout)
   const handleProceedToCheckout = () => {
     if (!checkAuthOrRedirect()) return;
 
@@ -389,7 +412,6 @@ function UserProfile() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Traitement Fichier Image
   const processSelectedFile = (file: File) => {
     if (!file.type.startsWith("image/")) {
       setError("Veuillez sélectionner un fichier image valide.");
@@ -426,7 +448,6 @@ function UserProfile() {
     }
   };
 
-  // Enregistrement du Profil
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!checkAuthOrRedirect()) return;
@@ -526,12 +547,19 @@ function UserProfile() {
   }
 
   const currentAvatarSrc = getAvatarUrl(isEditing ? formData.avatarUrl : user.avatarUrl);
-
-  // Vérification si l'utilisateur est administrateur
   const isAdmin = user.role === "admin" || user.is_admin === true;
 
+  const activeOrders = orders.filter(
+    (o) => o.status.toLowerCase() !== "annulé" && o.status.toLowerCase() !== "retourné"
+  );
+  const cancelledOrders = orders.filter(
+    (o) => o.status.toLowerCase() === "annulé" || o.status.toLowerCase() === "retourné"
+  );
+
+  const displayedOrders = orderFilterTab === "active" ? activeOrders : cancelledOrders;
+
   return (
-    <div className="max-w-4xl mx-auto p-4 md:p-8">
+    <div className="max-w-4xl mx-auto p-4 md:p-8 font-sans">
       {/* Notifications */}
       {error && (
         <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl flex items-center justify-between">
@@ -540,7 +568,7 @@ function UserProfile() {
         </div>
       )}
       {successMsg && (
-        <div className="mb-4 p-4 bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm rounded-xl flex items-center justify-between">
+        <div className="mb-4 p-4 bg-emerald-50  border-emerald-200 text-emerald-700 text-sm rounded-xl flex items-center justify-between">
           <span>{successMsg}</span>
           <button onClick={() => setSuccessMsg(null)} className="font-bold text-emerald-700 ml-4">&times;</button>
         </div>
@@ -570,7 +598,6 @@ function UserProfile() {
                 <h1 className="text-2xl font-bold text-gray-900">
                   {user.username || "Utilisateur"}
                 </h1>
-                
               </div>
               <p className="text-sm text-gray-500 mt-0.5">{user.email}</p>
               {user.city && (
@@ -583,22 +610,20 @@ function UserProfile() {
             </div>
           </div>
 
-          {/* Navigation Onglets & Actions */}
+          {/* Navigation Onglets */}
           <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto">
-            {/* 👑 BOUTON TABLEAU DE BORD ADMIN (Affiché uniquement pour les admins) */}
             {isAdmin && (
               <button
                 onClick={() => navigate("/admin/dashboard")}
                 className="flex-1 sm:flex-none px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-semibold text-sm rounded-xl shadow-sm transition-all flex items-center justify-center gap-2"
                 title="Accéder au Tableau de bord Administrateur"
               >
-                <FaTachometerAlt /> 
-               Tableau de bord
+                <FaTachometerAlt />
               </button>
             )}
 
             <button
-              onClick={() => { setActiveTab("info"); setIsEditing(false); }}
+              onClick={() => { setActiveTab("info"); setIsEditing(false); setSelectedOrder(null); }}
               className={`flex-1 sm:flex-none px-4 py-2.5 rounded-xl text-sm font-semibold transition-all ${
                 activeTab === "info"
                   ? "bg-indigo-600 text-white shadow-sm"
@@ -618,7 +643,7 @@ function UserProfile() {
               <i className="fas fa-shopping-bag mr-2"></i>Commandes ({orders.length})
             </button>
             <button
-              onClick={() => { setActiveTab("cart"); setIsEditing(false); }}
+              onClick={() => { setActiveTab("cart"); setIsEditing(false); setSelectedOrder(null); }}
               className={`flex-1 sm:flex-none px-4 py-2.5 rounded-xl text-sm font-semibold transition-all ${
                 activeTab === "cart"
                   ? "bg-indigo-600 text-white shadow-sm"
@@ -639,7 +664,7 @@ function UserProfile() {
               ) : (
                 <i className="fas fa-sign-out-alt"></i>
               )}
-              <span className=" md:inline"><CiLogout /></span>
+              <span className="md:inline"><CiLogout /></span>
             </button>
           </div>
         </div>
@@ -830,132 +855,315 @@ function UserProfile() {
       {/* ONGLET 2 : Commandes */}
       {activeTab === "orders" && (
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-          <div className="flex items-center justify-between border-b border-gray-100 pb-4 mb-6">
-            <h2 className="text-lg font-bold text-gray-800">Historique des Commandes</h2>
-            <span className="text-xs font-bold px-3 py-1 bg-gray-100 text-gray-700 rounded-full border">
-              {orders.length} commande(s)
-            </span>
-          </div>
-
-          {orders.length === 0 ? (
-            <p className="text-center py-8 text-sm text-gray-500">Aucune commande trouvée.</p>
-          ) : (
+          {selectedOrder ? (
+            /* VUE DÉTAILLÉE DE LA COMMANDE (Inspirée de la capture) */
             <div className="space-y-6">
-              {orders.map((order) => {
-                const total = order.total_amount || order.total_price || order.total || 0;
-                const orderNum = order.order_number || `#${order.id}`;
-                const date = order.created_at
-                  ? new Date(order.created_at).toLocaleDateString("fr-FR", {
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                    })
-                  : order.date || "-";
+              {/* En-tête avec bouton retour */}
+              <div className="flex items-center gap-3 pb-2 border-b border-gray-200">
+                <button
+                  onClick={() => setSelectedOrder(null)}
+                  className="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors"
+                  title="Retour aux commandes"
+                >
+                  <i className="fas fa-arrow-left text-lg"></i>
+                </button>
+                <h2 className="text-lg font-bold text-gray-900">Détails de la commande</h2>
+              </div>
 
-                const orderItems = order.items || [];
+              {/* Résumé commande */}
+              <div className="text-sm text-gray-700 space-y-1">
+                <p className="font-bold text-base text-gray-900">
+                  Commande n° {selectedOrder.order_number || selectedOrder.id}
+                </p>
+                <p className="text-xs text-gray-500">
+                  {selectedOrder.items?.length || selectedOrder.items_count || 1} article(s)
+                </p>
+                <p className="text-xs text-gray-500">
+                  Effectuée le {selectedOrder.created_at || selectedOrder.date || "N/A"}
+                </p>
+                <p className="text-xs font-semibold text-gray-800">
+                  Total: {Number(selectedOrder.total_price || selectedOrder.total_amount || selectedOrder.total || 0).toLocaleString("fr-FR")} FCFA
+                </p>
+              </div>
 
-                return (
-                  <div
-                    key={order.id}
-                    className="rounded-xl border border-gray-200 bg-white overflow-hidden shadow-sm hover:shadow-md transition-shadow"
-                  >
-                    <div className="flex flex-wrap items-center justify-between gap-4 p-4 bg-gray-50 border-b border-gray-100">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-9 h-9 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 font-bold shrink-0">
-                          <i className="fas fa-box text-sm"></i>
+              {/* Bloc ARTICLES DANS VOTRE COMMANDE */}
+              <div className="border border-gray-200 rounded-lg p-4 bg-white">
+                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">
+                  ARTICLES DANS VOTRE COMMANDE
+                </h3>
+
+                <div className="space-y-4">
+                  {(selectedOrder.items && selectedOrder.items.length > 0
+                    ? selectedOrder.items
+                    : [{} as OrderItemData]
+                  ).map((item, idx) => {
+                    const itemTitle =
+                      item.product_title ||
+                      item.title ||
+                      item.name ||
+                      item.product?.title ||
+                      item.product?.name ||
+                      "Article sans nom";
+                    const itemPrice = item.unit_price || item.price || item.product?.price || 0;
+                    const itemOldPrice = item.old_price;
+                    const itemQty = item.quantity || 1;
+                    const itemImg = getItemImageUrl(item);
+
+                    return (
+                      <div key={idx} className="flex flex-col sm:flex-row gap-4 items-start">
+                        <div className="w-24 h-24 rounded-md border border-gray-100 bg-gray-50 shrink-0 overflow-hidden flex items-center justify-center p-1">
+                          {itemImg ? (
+                            <img
+                              src={itemImg}
+                              alt={itemTitle}
+                              className="w-full h-full object-contain"
+                            />
+                          ) : (
+                            <i className="fas fa-box text-gray-300 text-3xl"></i>
+                          )}
                         </div>
-                        <div>
-                          <span className="text-sm font-mono font-bold text-indigo-600">
-                            {orderNum}
-                          </span>
-                          <p className="text-xs text-gray-500">{date}</p>
-                        </div>
-                      </div>
 
-                      <div className="flex items-center gap-4">
-                        <span className="text-xs font-semibold px-3 py-1 rounded-full border bg-emerald-50 text-emerald-700 border-emerald-200">
-                          {order.status}
-                        </span>
-                        <div className="text-right">
-                          <span className="text-xs text-gray-400 block">Total Commande</span>
-                          <p className="text-sm font-extrabold text-gray-900">
-                            {Number(total).toLocaleString("fr-FR")} FCFA
+                        <div className="flex-1 space-y-1.5">
+                          {/* Badge de statut */}
+                          <div>
+                            <span className="inline-block bg-green-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-sm uppercase tracking-wide">
+                              {selectedOrder.status.toUpperCase()}
+                            </span>
+                          </div>
+
+                          {/* Date indicative */}
+                          {selectedOrder.delivery_date_info && (
+                            <p className="text-xs font-bold text-gray-800">
+                              {selectedOrder.delivery_date_info}
+                            </p>
+                          )}
+
+                          <h4 className="text-sm font-semibold text-gray-900 leading-snug">
+                            {itemTitle}
+                          </h4>
+
+                          <p className="text-xs text-gray-500">
+                            Quantité: {itemQty}
                           </p>
+
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-bold text-gray-900">
+                              {Number(itemPrice).toLocaleString("fr-FR")} FCFA
+                            </span>
+                            {itemOldPrice && (
+                              <span className="text-xs text-gray-400 line-through">
+                                {Number(itemOldPrice).toLocaleString("fr-FR")} FCFA
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Grid PAIEMENT et LIVRAISON */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Section PAIEMENT */}
+                <div className="border border-gray-200 rounded-lg p-4 bg-white space-y-3">
+                  <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-100 pb-2">
+                    PAIEMENT
+                  </h3>
+
+                  <div>
+                    <h4 className="text-xs font-bold text-gray-800 mb-1">Mode de paiement</h4>
+                    <p className="text-xs text-gray-600">
+                      {selectedOrder.payment_method || "Paiement à la livraison / Mobile Money"}
+                    </p>
+                  </div>
+
+                  <div className="pt-2 border-t border-gray-50 space-y-1">
+                    <h4 className="text-xs font-bold text-gray-800 mb-1">Détails du paiement</h4>
+                    <div className="flex justify-between text-xs text-gray-600">
+                      <span>Sous-total:</span>
+                      <span>
+                        {Number(selectedOrder.subtotal || selectedOrder.total_price || 0).toLocaleString("fr-FR")} FCFA
+                      </span>
                     </div>
-
-                    <div className="p-4 divide-y divide-gray-100">
-                      {orderItems.length === 0 ? (
-                        <p className="text-xs text-gray-400 italic py-2">
-                          Détails des articles indisponibles.
-                        </p>
-                      ) : (
-                        orderItems.map((item, idx) => {
-                          const title =
-                            item.product_title ||
-                            item.title ||
-                            item.name ||
-                            item.product?.title ||
-                            item.product?.name ||
-                            "Article";
-
-                          const unitPrice =
-                            item.unit_price || item.price || item.product?.price || 0;
-
-                          const imgUrl = getItemImageUrl(item);
-
-                          return (
-                            <div
-                              key={item.id || idx}
-                              className="py-3 first:pt-0 last:pb-0 flex items-center justify-between gap-4"
-                            >
-                              <div className="flex items-center gap-3">
-                                {imgUrl ? (
-                                  <img
-                                    src={imgUrl}
-                                    alt={title}
-                                    onError={(e) => {
-                                      (e.target as HTMLElement).style.display = 'none';
-                                      if ((e.target as HTMLElement).nextElementSibling) {
-                                        ((e.target as HTMLElement).nextElementSibling as HTMLElement).style.display = 'flex';
-                                      }
-                                    }}
-                                    className="w-12 h-12 object-cover rounded-lg border border-gray-100 bg-gray-50 shrink-0"
-                                  />
-                                ) : null}
-
-                                <div
-                                  className="w-12 h-12 bg-indigo-50 text-indigo-500 rounded-lg border border-indigo-100 flex items-center justify-center font-bold text-sm shrink-0"
-                                  style={{ display: imgUrl ? 'none' : 'flex' }}
-                                >
-                                  <i className="fas fa-shopping-bag"></i>
-                                </div>
-
-                                <div>
-                                  <h4 className="text-xs font-bold text-gray-800 line-clamp-1">
-                                    {title}
-                                  </h4>
-                                  <p className="text-[11px] text-gray-500 mt-0.5">
-                                    Qté : <span className="font-semibold text-gray-700">{item.quantity}</span> × {Number(unitPrice).toLocaleString("fr-FR")} FCFA
-                                  </p>
-                                </div>
-                              </div>
-
-                              <div className="text-right shrink-0">
-                                <span className="text-xs font-bold text-gray-900">
-                                  {Number(unitPrice * item.quantity).toLocaleString("fr-FR")} FCFA
-                                </span>
-                              </div>
-                            </div>
-                          );
-                        })
-                      )}
+                    <div className="flex justify-between text-xs text-gray-600">
+                      <span>Frais de livraison:</span>
+                      <span>
+                        {selectedOrder.shipping_fee
+                          ? `${Number(selectedOrder.shipping_fee).toLocaleString("fr-FR")} FCFA`
+                          : "0 FCFA"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-xs font-bold text-gray-900 pt-1">
+                      <span>Total:</span>
+                      <span>
+                        {Number(selectedOrder.total_price || selectedOrder.total_amount || selectedOrder.total || 0).toLocaleString("fr-FR")} FCFA
+                      </span>
                     </div>
                   </div>
-                );
-              })}
+                </div>
+
+                {/* Section LIVRAISON (Affichage adresse uniquement) */}
+                <div className="border border-gray-200 rounded-lg p-4 bg-white space-y-3">
+                  <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-100 pb-2">
+                    LIVRAISON
+                  </h3>
+
+                  <div>
+                    <h4 className="text-xs font-bold text-gray-800 mb-1">Méthode de livraison</h4>
+                    <p className="text-xs text-gray-600">
+                      {selectedOrder.shipping_method || "Livraison à domicile / Point Relais"}
+                    </p>
+                  </div>
+
+                  <div>
+                    <h4 className="text-xs font-bold text-gray-800 mb-1">Adresse de livraison</h4>
+                    <p className="text-xs text-gray-600 leading-relaxed whitespace-pre-line">
+                      {selectedOrder.shipping_address || user.address || user.city || "Adresse non renseignée"}
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
+          ) : (
+            /* VUE LISTE DES COMMANDES */
+            <>
+              <h2 className="text-xl font-bold text-gray-800 mb-4">Vos commandes</h2>
+
+              {/* Sub-tabs filtres */}
+              <div className="flex border-b border-gray-200 mb-6">
+                <button
+                  onClick={() => setOrderFilterTab("active")}
+                  className={`py-2 px-4 text-xs font-bold tracking-wide transition-all border-b-2 ${
+                    orderFilterTab === "active"
+                      ? "border-orange-500 text-orange-500"
+                      : "border-transparent text-gray-500 hover:text-gray-800"
+                  }`}
+                >
+                  EN COURS/LIVRÉES ({activeOrders.length})
+                </button>
+                <button
+                  onClick={() => setOrderFilterTab("cancelled")}
+                  className={`py-2 px-4 text-xs font-bold tracking-wide transition-all border-b-2 ${
+                    orderFilterTab === "cancelled"
+                      ? "border-orange-500 text-orange-500"
+                      : "border-transparent text-gray-500 hover:text-gray-800"
+                  }`}
+                >
+                  ANNULÉES/RETOURNÉES ({cancelledOrders.length})
+                </button>
+              </div>
+
+              {displayedOrders.length === 0 ? (
+                <div className="text-center py-12 text-sm text-gray-500">
+                  Aucune commande enregistrée dans cette rubrique.
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {displayedOrders.map((order) => {
+                    const firstItem = order.items && order.items.length > 0 ? order.items[0] : null;
+                    const title =
+                      firstItem?.product_title ||
+                      firstItem?.title ||
+                      firstItem?.name ||
+                      firstItem?.product?.title ||
+                      firstItem?.product?.name ||
+                      "Commande d'articles";
+
+                    const orderNum = order.order_number || order.id;
+                    const imgUrl = firstItem ? getItemImageUrl(firstItem) : null;
+                    const size = firstItem?.size;
+
+                    const isDelivered = order.status.toLowerCase().includes("livré");
+                    const isPending =
+                      order.status.toLowerCase().includes("attente") ||
+                      order.status.toLowerCase().includes("pending");
+
+                    return (
+                      <div
+                        key={order.id}
+                        className="border border-gray-200 rounded-lg p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white hover:border-gray-300 transition-colors"
+                      >
+                        <div className="flex items-start gap-4">
+                          {/* Photo produit */}
+                          <div className="w-20 h-20 rounded-md border border-gray-100 bg-gray-50 shrink-0 overflow-hidden flex items-center justify-center p-1">
+                            {imgUrl ? (
+                              <img
+                                src={imgUrl}
+                                alt={title}
+                                className="w-full h-full object-contain"
+                              />
+                            ) : (
+                              <i className="fas fa-box text-gray-300 text-2xl"></i>
+                            )}
+                          </div>
+
+                          {/* Infos produit */}
+                          <div className="flex flex-col gap-1">
+                            <h3 className="text-sm font-semibold text-gray-900 leading-snug">
+                              {title}
+                            </h3>
+                            <p className="text-xs text-gray-500">
+                              Commande {orderNum}
+                            </p>
+
+                            {size && (
+                              <p className="text-xs text-gray-600 font-medium">
+                                Size: {size}
+                              </p>
+                            )}
+
+                            <div className="mt-1 flex flex-col items-start gap-1">
+                              {isDelivered && (
+                                <>
+                                  <span className="inline-block bg-emerald-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-sm uppercase tracking-wide">
+                                    COLIS LIVRÉ
+                                  </span>
+                                  {order.delivery_date_info && (
+                                    <span className="text-xs font-bold text-gray-900">
+                                      {order.delivery_date_info}
+                                    </span>
+                                  )}
+                                </>
+                              )}
+
+                              {isPending && (
+                                <>
+                                  <span className="inline-block bg-blue-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-sm uppercase tracking-wide">
+                                   {order.status}
+                                  </span>
+                                  {order.delivery_date_info && (
+                                    <span className="text-xs font-bold text-gray-900">
+                                      {order.delivery_date_info}
+                                    </span>
+                                  )}
+                                </>
+                              )}
+
+                              {!isDelivered && !isPending && (
+                                <span className="inline-block bg-green-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-sm uppercase tracking-wide">
+                                  {order.status}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Bouton Voir Détails */}
+                        <div className="self-end sm:self-center">
+                          <button
+                            onClick={() => setSelectedOrder(order)}
+                            className="text-orange-500 hover:text-orange-600 font-semibold text-sm transition-colors"
+                          >
+                            Détails
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </>
           )}
         </div>
       )}

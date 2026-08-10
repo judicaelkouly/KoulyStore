@@ -15,11 +15,11 @@ export interface Product {
   promo_price?: number | string | null;
   images?: string[] | string | null;
   stock?: number;
+  is_active?: boolean | number;
   category_id?: number | string;
   category?: Category;
 }
 
-// Support de selectedCategory et de la fonction pour réinitialiser
 interface ProductsProps {
   searchQuery?: string;
   selectedCategory?: Category | null;
@@ -40,6 +40,34 @@ function Products({
   // Gestion des actions d'ajout au panier / chargement
   const [addingId, setAddingId] = useState<number | string | null>(null);
   const [notification, setNotification] = useState<string | null>(null);
+
+  // Helper pour extraire le token CSRF/XSRF des cookies
+  const getXsrfToken = (): string => {
+    const cookies = document.cookie.split(";");
+    for (let cookie of cookies) {
+      const [name, value] = cookie.trim().split("=");
+      if (name === "XSRF-TOKEN") return decodeURIComponent(value);
+    }
+    return "";
+  };
+
+  // Helper pour vérifier rapidement si l'utilisateur est connecté
+  const checkAuth = async (): Promise<boolean> => {
+    try {
+      const xsrfToken = getXsrfToken();
+      const response = await fetch("http://localhost:8000/api/user", {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          ...(xsrfToken ? { "X-XSRF-TOKEN": xsrfToken } : {}),
+        },
+        credentials: "include",
+      });
+      return response.ok;
+    } catch {
+      return false;
+    }
+  };
 
   // 📥 Récupération des produits depuis l'API avec support Recherche & Catégorie
   useEffect(() => {
@@ -85,7 +113,6 @@ function Products({
       }
     };
 
-    // Debounce de 300ms pour éviter de trop solliciter l'API sur la saisie clavier
     const timer = setTimeout(() => {
       fetchProducts();
     }, 300);
@@ -93,9 +120,18 @@ function Products({
     return () => clearTimeout(timer);
   }, [searchQuery, selectedCategory]);
 
-  // Filtrage local complémentaire (assure une réactivité instantanée côté client)
+  // Filtrage local complémentaire
   const filteredProducts = products.filter((p) => {
-    // 1. Filtre par Catégorie
+    const isActive =
+      p.is_active === undefined ||
+      p.is_active === true ||
+      p.is_active === 1 ||
+      (p as any).is_active === "1";
+
+    if (!isActive) {
+      return false;
+    }
+
     if (selectedCategory) {
       const matchCategoryId =
         p.category_id &&
@@ -112,7 +148,6 @@ function Products({
       }
     }
 
-    // 2. Filtre par Recherche Texte
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       const matchTitle = p.title.toLowerCase().includes(q);
@@ -125,16 +160,14 @@ function Products({
     return true;
   });
 
-  // Helper pour extraire la 1ère image du produit en toute sécurité
+  // Helper pour l'image d'un produit
   const getSingleImageUrl = (product: Product): string => {
     let rawImages = product.images;
 
     if (typeof rawImages === "string") {
       try {
         rawImages = JSON.parse(rawImages);
-      } catch {
-        // C'est une simple chaîne, pas du JSON
-      }
+      } catch {}
     }
 
     let imgPath: string | null = null;
@@ -162,7 +195,7 @@ function Products({
     return "https://images.unsplash.com/photo-1546868871-7041f2a55e12?auto=format&fit=crop&w=600&q=80";
   };
 
-  // 🛒 Action : Ajouter au panier
+  // 🛒 Action : Ajouter au panier avec gestion propre de l'authentification
   const handleAddToCart = async (
     e: React.MouseEvent,
     productId: number | string
@@ -171,12 +204,28 @@ function Products({
     e.stopPropagation();
 
     setAddingId(productId);
+
     try {
+      // 1. Vérification préalable de la session
+      const isAuthenticated = await checkAuth();
+
+      if (!isAuthenticated) {
+        navigate("/login", {
+          state: {
+            message: "Veuillez vous connecter pour ajouter un article à votre panier.",
+          },
+        });
+        return;
+      }
+
+      // 2. Utilisateur authentifié : envoi au backend
+      const xsrfToken = getXsrfToken();
       const response = await fetch("http://localhost:8000/api/cart", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
+          ...(xsrfToken ? { "X-XSRF-TOKEN": xsrfToken } : {}),
         },
         credentials: "include",
         body: JSON.stringify({
@@ -185,15 +234,25 @@ function Products({
         }),
       });
 
+      // 3. Interception au cas où la session aurait expiré entre temps (401 / 419)
+      if (response.status === 401 || response.status === 419) {
+        navigate("/login", {
+          state: {
+            message: "Votre session a expiré. Veuillez vous reconnecter.",
+          },
+        });
+        return;
+      }
+
       if (response.ok) {
         showNotification("Produit ajouté au panier !");
       } else {
         const resData = await response.json();
-        showNotification(resData.message || "Connectez-vous pour ajouter au panier.");
+        showNotification(resData.message || "Impossible d'ajouter au panier.");
       }
     } catch (err) {
       console.error("Erreur ajout panier:", err);
-      showNotification("Impossible d'ajouter au panier.");
+      showNotification("Erreur de connexion au serveur.");
     } finally {
       setAddingId(null);
     }
@@ -203,27 +262,7 @@ function Products({
   const handleDirectBuy = (e: React.MouseEvent, product: Product) => {
     e.preventDefault();
     e.stopPropagation();
-
-    const effectivePrice =
-      product.promo_price && Number(product.promo_price) > 0
-        ? Number(product.promo_price)
-        : Number(product.price);
-
-    navigate("/checkout", {
-      state: {
-        items: [
-          {
-            id: product.id,
-            name: product.title,
-            category: product.category?.name || "Général",
-            price: effectivePrice,
-            quantity: 1,
-            image: getSingleImageUrl(product),
-          },
-        ],
-        source: "direct",
-      },
-    });
+    navigate(`/details?id=${product.id}`);
   };
 
   const showNotification = (msg: string) => {
@@ -240,7 +279,7 @@ function Products({
           className="text-3xl sm:text-4xl font-bold text-slate-800 border-l-4 border-indigo-600 pl-4"
           id="produits"
         >
-          Nos Produits
+          Trouvez votre produit idéal
         </h1>
 
         {/* Badges d'état de recherche / filtre active */}
@@ -303,7 +342,7 @@ function Products({
         <div className="text-center py-16 bg-slate-50 rounded-2xl border border-dashed border-gray-200">
           <p className="text-gray-500 text-sm font-medium mb-3">
             {selectedCategory || searchQuery.trim()
-              ? "Aucun produit ne correspond à vos critères de recherche actuels."
+              ? "Aucun produit disponible ne correspond à vos critères de recherche actuels."
               : "Aucun produit disponible pour le moment."}
           </p>
           {(selectedCategory || searchQuery.trim()) && onClearCategory && (
@@ -317,7 +356,7 @@ function Products({
         </div>
       )}
 
-      {/* Grille des Produits */}
+      {/* Grille des Produits Actifs */}
       {!loading && !error && filteredProducts.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
           {filteredProducts.map((product) => {

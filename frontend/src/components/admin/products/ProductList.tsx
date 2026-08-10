@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 
-// 1. Types TypeScript pour les produits
+// 1. Types TypeScript pour les produits (avec l'attribut is_active)
 export interface Product {
   id: number | string;
   title?: string;
@@ -9,6 +9,7 @@ export interface Product {
   price: number | string;
   promo_price?: number | string | null;
   stock: number;
+  is_active?: boolean; // 👈 Champ pour activer/désactiver
   category?: {
     id: number | string;
     name: string;
@@ -21,12 +22,14 @@ function ProductList() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<number | string | null>(null);
+  const [togglingId, setTogglingId] = useState<number | string | null>(null); // Loader pour le switch
 
   // 📥 1. Récupération des produits depuis l'API Laravel
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const response = await fetch("http://localhost:8000/api/products", {
+      const response = await fetch("http://localhost:8000/api/admin/products", {
+        credentials: "include", 
         headers: {
           Accept: "application/json",
         },
@@ -37,7 +40,6 @@ function ProductList() {
       }
 
       const data = await response.json();
-      // Gère le cas où l'API renvoie { products: [...] }, { data: [...] } ou un tableau direct
       const productList = Array.isArray(data)
         ? data
         : data.products || data.data || [];
@@ -55,41 +57,75 @@ function ProductList() {
     fetchProducts();
   }, []);
 
-  // 🗑️ 2. Suppression d'un produit
- const handleDelete = async (id: number | string, productName: string) => {
-  if (!window.confirm(`Êtes-vous sûr de vouloir supprimer "${productName}" ?`)) {
-    return;
-  }
+  // 🔄 2. Bascule du statut d'un produit (Activer / Désactiver)
+  const handleToggleStatus = async (id: number | string, currentStatus?: boolean) => {
+    setTogglingId(id);
 
-  try {
+    try {
+      const response = await fetch(`http://localhost:8000/api/admin/products/${id}/toggle-status`, {
+        method: "PATCH",
+        credentials: "include", // Transmet les cookies de session Admin
+        headers: {
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+        },
+      });
 
-    const response = await fetch(`http://localhost:8000/api/admin/products/${id}`, {
-  method: "DELETE",
-  credentials: "include", // 👈 Transmet les cookies de session Laravel
-  headers: {
-    "Accept": "application/json",
-    "Content-Type": "application/json",
-  },
-});
+      const data = await response.json();
 
+      if (!response.ok) {
+        throw new Error(data.message || "Erreur lors du changement de statut.");
+      }
 
-    const data = await response.json();
+      // Mise à jour de l'état local du produit
+      setProducts((prevProducts) =>
+        prevProducts.map((p) =>
+          p.id === id ? { ...p, is_active: data.is_active ?? !currentStatus } : p
+        )
+      );
+    } catch (err: any) {
+      console.error("Erreur toggle status:", err);
+      alert(err.message || "Impossible de changer le statut du produit.");
+    } finally {
+      setTogglingId(null);
+    }
+  };
 
-    if (!response.ok) {
-      throw new Error(data.message || "Erreur lors de la suppression.");
+  // 🗑️ 3. Suppression d'un produit
+  const handleDelete = async (id: number | string, productName: string) => {
+    if (!window.confirm(`Êtes-vous sûr de vouloir supprimer "${productName}" ?`)) {
+      return;
     }
 
-    // Mise à jour de l'affichage
-    setProducts((prev) => prev.filter((item) => item.id !== id));
-    alert("Produit supprimé !");
-  } catch (err: any) {
-    console.error("Erreur de suppression:", err);
-    alert(err.message || "Erreur lors de la suppression.");
-  }
-};
+    setDeletingId(id);
 
+    try {
+      const response = await fetch(`http://localhost:8000/api/admin/products/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+        headers: {
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+        },
+      });
 
-  // 🖼️ 3. Extraction sécurisée de l'image
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Erreur lors de la suppression.");
+      }
+
+      setProducts((prev) => prev.filter((item) => item.id !== id));
+      alert("Produit supprimé !");
+    } catch (err: any) {
+      console.error("Erreur de suppression:", err);
+      alert(err.message || "Erreur lors de la suppression.");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  // 🖼️ 4. Extraction sécurisée de l'image
   const getProductImage = (product: Product): string => {
     let rawImgs = product.images;
 
@@ -118,7 +154,6 @@ function ProductList() {
         : `http://localhost:8000/storage/${rawImgs.replace(/^\//, "")}`;
     }
 
-    // Image fallback
     return "https://images.unsplash.com/photo-1546868871-7041f2a55e12?auto=format&fit=crop&w=100&q=80";
   };
 
@@ -157,6 +192,7 @@ function ProductList() {
                 <th className="py-3 px-6 text-left">Catégorie</th>
                 <th className="py-3 px-6 text-left">Prix</th>
                 <th className="py-3 px-6 text-left">Stock</th>
+                <th className="py-3 px-6 text-center">Statut (Admin)</th> {/* 👈 Nouvelle colonne */}
                 <th className="py-3 px-6 text-center">Actions</th>
               </tr>
             </thead>
@@ -165,7 +201,7 @@ function ProductList() {
               {/* État de chargement */}
               {loading && (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center text-gray-500">
+                  <td colSpan={8} className="py-8 text-center text-gray-500">
                     Chargement des produits en cours...
                   </td>
                 </tr>
@@ -174,7 +210,7 @@ function ProductList() {
               {/* Erreur */}
               {error && !loading && (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center text-red-500">
+                  <td colSpan={8} className="py-8 text-center text-red-500">
                     {error}
                   </td>
                 </tr>
@@ -183,7 +219,7 @@ function ProductList() {
               {/* Aucun produit */}
               {!loading && !error && products.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center text-gray-400">
+                  <td colSpan={8} className="py-8 text-center text-gray-400">
                     Aucun produit trouvé dans la base de données.
                   </td>
                 </tr>
@@ -198,6 +234,9 @@ function ProductList() {
                     typeof product.category === "object"
                       ? product.category?.name
                       : product.category || "N/A";
+                  
+                  // Considéré actif par défaut si le booléen n'est pas explicite
+                  const isActive = product.is_active ?? true;
 
                   return (
                     <tr
@@ -250,6 +289,35 @@ function ProductList() {
                         >
                           {product.stock} en stock
                         </span>
+                      </td>
+
+                      {/* STATUT : BOUTON TOGGLE (ADMIN) */}
+                      <td className="py-3 px-6 text-center">
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleToggleStatus(product.id, isActive)}
+                            disabled={togglingId === product.id}
+                            title={isActive ? "Cliquez pour désactiver" : "Cliquez pour activer"}
+                            className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                              isActive ? "bg-emerald-500" : "bg-gray-300"
+                            } ${togglingId === product.id ? "opacity-50 cursor-wait" : ""}`}
+                          >
+                            <span
+                              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                                isActive ? "translate-x-5" : "translate-x-0"
+                              }`}
+                            />
+                          </button>
+                          
+                          <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                            isActive 
+                              ? "bg-emerald-100 text-emerald-700" 
+                              : "bg-gray-100 text-gray-500"
+                          }`}>
+                            {isActive ? "Visible" : "Masqué"}
+                          </span>
+                        </div>
                       </td>
 
                       {/* Actions */}

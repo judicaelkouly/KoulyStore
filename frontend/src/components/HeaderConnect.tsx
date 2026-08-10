@@ -110,7 +110,7 @@ function HeaderConnect({ onLogout }: HeaderProps) {
   const initialLetter = user?.username ? user.username.charAt(0).toUpperCase() : "?";
 
   return (
-    <header className="bg-white border-b border-custom rounded-lg border-gray-200 px-4 py-3 sticky top-0 z-50">
+    <header className="bg-white border-b border-custom rounded-xl border-gray-200 px-4 py-3 h-[60px] sticky top-0 z-50">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         {/* LOGO / MARQUE */}
         <div className="flex items-center">

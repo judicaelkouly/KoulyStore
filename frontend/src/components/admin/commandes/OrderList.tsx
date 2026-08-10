@@ -1,11 +1,27 @@
-import  { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 
-// Types TypeScript réalignés avec la structure Laravel réelle
+// Interfaces TypeScript mises à jour avec la structure product & images
 export interface User {
   id: number;
   name?: string;
   username?: string;
   email?: string;
+}
+
+export interface ProductImage {
+  id?: number;
+  image_path?: string;
+  url?: string;
+  is_primary?: boolean;
+}
+
+export interface Product {
+  id: number;
+  title?: string;
+  image_url?: string | null;
+  image_path?: string | null;
+  image?: string | null;
+  images?: ProductImage[] | string[];
 }
 
 export interface OrderItem {
@@ -16,6 +32,7 @@ export interface OrderItem {
   unit_price: string | number;
   quantity: number;
   size?: string | null;
+  product?: Product | null; // 👈 Relation du produit incluant l'image
 }
 
 export interface OrderData {
@@ -38,6 +55,68 @@ function OrderList() {
   const [orders, setOrders] = useState<OrderData[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Helper pour formater et valider les URLs d'images Laravel
+  const formatImageUrl = (pathCandidate?: any): string | null => {
+    if (!pathCandidate) return null;
+
+    let target = pathCandidate;
+
+    if (typeof pathCandidate === "object" && pathCandidate !== null) {
+      target =
+        pathCandidate.image_path ||
+        pathCandidate.url ||
+        pathCandidate.path ||
+        pathCandidate.image ||
+        "";
+    }
+
+    if (!target || typeof target !== "string") return null;
+
+    if (
+      target.startsWith("http://") ||
+      target.startsWith("https://") ||
+      target.startsWith("data:") ||
+      target.startsWith("blob:")
+    ) {
+      return target;
+    }
+
+    const cleanPath = target.replace(/^\//, "");
+
+    if (cleanPath.startsWith("storage/")) {
+      return `http://localhost:8000/${cleanPath}`;
+    }
+
+    return `http://localhost:8000/storage/${cleanPath}`;
+  };
+
+  // Récupère l'image du produit liée à l'item de commande
+  const getItemImage = (item: OrderItem): string | null => {
+    if (!item) return null;
+
+    const product = item.product;
+    if (!product) return null;
+
+    // 1. Chercher la propriété image_url (accessor Laravel / $appends)
+    if (product.image_url) {
+      return formatImageUrl(product.image_url);
+    }
+
+    // 2. Chercher dans les attributs directs du produit
+    const directCandidate = product.image_path || product.image;
+    if (directCandidate) {
+      return formatImageUrl(directCandidate);
+    }
+
+    // 3. Chercher dans la relation d'images (tableau)
+    if (Array.isArray(product.images) && product.images.length > 0) {
+      const firstImg = product.images[0];
+      return formatImageUrl(firstImg);
+    }
+
+    return null;
+  };
 
   // Utilitaire pour récupérer le Cookie XSRF-TOKEN
   const getXsrfToken = () => {
@@ -94,24 +173,6 @@ function OrderList() {
     fetchOrders();
   }, []);
 
-  // Helper pour styliser les badges de mode de paiement
-  // const getPaymentBadge = (type?: string) => {
-  //   const cleanType = (type || "").toLowerCase();
-  //   if (cleanType.includes("wave")) {
-  //     return "bg-cyan-50 text-cyan-700 border-cyan-200";
-  //   }
-  //   if (cleanType.includes("orange")) {
-  //     return "bg-orange-50 text-orange-700 border-orange-200";
-  //   }
-  //   if (cleanType.includes("mtn")) {
-  //     return "bg-yellow-50 text-yellow-800 border-yellow-200";
-  //   }
-  //   if (cleanType.includes("card") || cleanType.includes("carte")) {
-  //     return "bg-indigo-50 text-indigo-700 border-indigo-200";
-  //   }
-  //   return "bg-gray-50 text-gray-700 border-gray-200";
-  // };
-
   if (loading) {
     return (
       <div className="py-16 text-center text-gray-500 font-medium">
@@ -161,12 +222,9 @@ function OrderList() {
       ) : (
         <div className="space-y-4">
           {orders.map((order) => {
-            // Normalisation des champs direct de la BDD Laravel
             const orderId = order.order_number || `#${order.id}`;
             const amount = Number(order.total_amount || 0);
-            // const paymentType = order.payment_method || "Wave";
 
-            // Formatage de la date
             const orderDate = order.created_at
               ? new Date(order.created_at).toLocaleDateString("fr-FR", {
                   day: "2-digit",
@@ -175,41 +233,63 @@ function OrderList() {
                 })
               : "-";
 
-            // Vérification statut payé
-            const isPaid = order.status?.toLowerCase() === "paid" || order.status?.toLowerCase() === "payé";
+            const isPaid =
+              order.status?.toLowerCase() === "paid" ||
+              order.status?.toLowerCase() === "payé";
 
-            // Récupération du nom du client et adresse
-            const clientName = order.user?.name || order.user?.username || "Client Anonyme";
+            const clientName =
+              order.user?.name || order.user?.username || "Client Anonyme";
             const address = order.shipping_address || "Adresse non spécifiée";
             const city = order.city || "Abidjan";
             const phone = order.phone || "";
 
             const items = order.items || [];
+            
+            // Image du 1er article de la commande pour l'aperçu
+            const firstItemImage = items.length > 0 ? getItemImage(items[0]) : null;
 
             return (
               <div
                 key={order.id}
                 className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200 p-5 grid grid-cols-1 md:grid-cols-12 gap-4 items-center"
               >
-                {/* 1. Infos Produit / ID (Col 4) */}
+                {/* 1. Image + Infos Produit / ID (Col 4) */}
                 <div className="md:col-span-4 flex items-center space-x-4">
-                  <div className="w-12 h-12 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center shrink-0">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-6 w-6 text-gray-400"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
+                  {/* Conteneur d'image */}
+                  <div className="w-14 h-14 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center shrink-0 overflow-hidden">
+                    {firstItemImage ? (
+                      <img
+                        src={firstItemImage}
+                        alt="Aperçu produit"
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          // Fallback si l'image ne charge pas
+                          (e.target as HTMLElement).style.display = "none";
+                          (e.target as HTMLElement).nextElementSibling?.classList.remove("hidden");
+                        }}
                       />
-                    </svg>
+                    ) : null}
+
+                    {/* Icône de fallback si pas d'image */}
+                    <div className={`flex items-center justify-center ${firstItemImage ? "hidden" : ""}`}>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-6 w-6 text-gray-400"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
+                        />
+                      </svg>
+                    </div>
                   </div>
-                  <div className="min-w-0">
+
+                  <div className="min-w-0 flex-1">
                     <span className="text-xs font-mono font-bold text-indigo-600">
                       {orderId}
                     </span>
@@ -254,19 +334,8 @@ function OrderList() {
                   )}
                 </div>
 
-                {/* 3. Mode de Paiement (Col 2) */}
-                {/* <div className="md:col-span-2 flex flex-col items-start md:items-center">
-                  <span
-                    className={`text-xs font-semibold px-2.5 py-1 rounded-md border capitalize ${getPaymentBadge(
-                      paymentType
-                    )}`}
-                  >
-                    {paymentType}
-                  </span>
-                </div> */}
-
-                {/* 4. Montant & Statut (Col 3) */}
-                <div className="md:col-span-3 flex items-center justify-between md:justify-end gap-4 border-t md:border-t-0 pt-3 md:pt-0 border-gray-100">
+                {/* 3. Montant & Statut (Col 5) */}
+                <div className="md:col-span-5 flex items-center justify-between md:justify-end gap-4 border-t md:border-t-0 pt-3 md:pt-0 border-gray-100">
                   <div className="text-left md:text-right">
                     <p className="text-base font-bold text-gray-900">
                       {amount.toLocaleString("fr-FR")} FCFA
