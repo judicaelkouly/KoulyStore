@@ -110,8 +110,8 @@ function HeaderConnect({ onLogout }: HeaderProps) {
   const initialLetter = user?.username ? user.username.charAt(0).toUpperCase() : "?";
 
   return (
-    <header className="bg-white border-b border-custom rounded-xl border-gray-200 px-4 py-3 h-[60px] sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto flex items-center justify-between">
+    <header className="bg-white border-b border-custom rounded-xl border-gray-200 px-4 py-3 h-[80px] sticky top-0 z-50">
+      <div className="max-w-8xl mx-auto flex items-center justify-between">
         {/* LOGO / MARQUE */}
         <div className="flex items-center">
         <a href="#" className="flex items-center gap-2">
@@ -125,7 +125,7 @@ function HeaderConnect({ onLogout }: HeaderProps) {
           >
             <path d="M0 2.5A.5.5 0 0 1 .5 2H2a.5.5 0 0 1 .485.379L2.89 4H14.5a.5.5 0 0 1 .485.621l-1.5 6A.5.5 0 0 1 13 11H4a.5.5 0 0 1-.485-.379L1.61 3H.5a.5.5 0 0 1-.5-.5M3.14 5l.5 2H5V5zM6 5v2h2V5zm3 0v2h2V5zm3 0v2h1.36l.5-2zm1.11 3H12v2h.61zM11 8H9v2h2zM8 8H6v2h2zM5 8H3.89l.5 2H5zm0 5a1 1 0 1 0 0 2 1 1 0 0 0 0-2m-2 1a2 2 0 1 1 4 0 2 2 0 0 1-4 0m9-1a1 1 0 1 0 0 2 1 1 0 0 0 0-2m-2 1a2 2 0 1 1 4 0 2 2 0 0 1-4 0" />
           </svg>
-          <span className="text-lg md:text-xl font-extrabold text-indigo-600 tracking-tight whitespace-nowrap">
+          <span className="text-lg md:text-2xl font-extrabold text-indigo-600 tracking-tight whitespace-nowrap">
             Kouly<span className="text-gray-900">'Store</span>
           </span>
         </a>
@@ -133,7 +133,7 @@ function HeaderConnect({ onLogout }: HeaderProps) {
         {/* SECTION DROITE (Avatar + Panier) */}
         <div className="flex items-center gap-4">
           {loading ? (
-            <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse"></div>
+            <div className="w-10 h-10 rounded-full bg-gray-200 animate-pulse"></div>
           ) : user ? (
             /* Utilisateur Connecté */
             <div className="flex items-center gap-4">
@@ -148,10 +148,10 @@ function HeaderConnect({ onLogout }: HeaderProps) {
                     src={user.avatarUrl}
                     alt={user.username}
                     onError={() => setImageError(true)}
-                    className="w-10 h-10 rounded-full object-cover border-2 border-indigo-100 shadow-sm"
+                    className="w-15 h-15 rounded-full object-cover border-2 border-indigo-100 shadow-sm"
                   />
                 ) : (
-                  <div className="w-10 h-10 rounded-full bg-indigo-600 text-white font-bold flex items-center justify-center text-base shadow-sm">
+                  <div className="w-15 h-15 rounded-full bg-indigo-600 text-white font-bold flex items-center justify-center text-base shadow-sm">
                     {initialLetter}
                   </div>
                 )}
@@ -164,7 +164,7 @@ function HeaderConnect({ onLogout }: HeaderProps) {
                 className="relative p-2 text-gray-600 hover:text-indigo-600 bg-gray-50 hover:bg-indigo-50 rounded-xl transition-all"
                 title="Voir mon panier"
               >
-                <MdShoppingCart className="text-lg" />
+                <MdShoppingCart className="text-lg w-12 h-12" />
 
                 {/* Badge du nombre d'articles */}
                 {cartCount > 0 && (

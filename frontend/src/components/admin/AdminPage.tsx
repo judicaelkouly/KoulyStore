@@ -1,16 +1,17 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom"; // Ajout de useNavigate
 import ProductList from "./products/ProductList";
 import UserList from "./user/UserList";
 import OrderList from "./commandes/OrderList";
 import CategoryList from "./categories/CategoryList";
 import BannerList from "./bannieres/BannerList";
 
-import { FaChartBar, FaTachometerAlt, FaCog, FaUsers, FaHome, FaDollarSign } from "react-icons/fa";
+import { FaChartBar, FaTachometerAlt, FaUsers, FaHome, FaDollarSign, FaSignOutAlt } from "react-icons/fa"; // Ajout de FaSignOutAlt
 import { MdOutlineProductionQuantityLimits } from "react-icons/md";
 import { TbCategoryPlus } from "react-icons/tb";
-import { CgReorder } from "react-icons/cg";
+//import { CgReorder } from "react-icons/cg";
 import { PiFlagBannerFoldFill } from "react-icons/pi";
+import {FaReceipt} from "react-icons/fa";
 
 // Interfaces pour le typage des réponses API
 interface OrderSummary {
@@ -32,6 +33,7 @@ interface UserProfileData {
 
 function AdminPage() {
   const [activeTab, setActiveTab] = useState("dashboard");
+  const navigate = useNavigate(); // Initialisation pour la redirection
 
   // États pour stocker les métriques dynamiques
   const [totalRevenue, setTotalRevenue] = useState<number>(0);
@@ -77,7 +79,6 @@ function AdminPage() {
       if (xsrfToken) headers["X-XSRF-TOKEN"] = xsrfToken;
 
       try {
-        // Exécution simultanée des requêtes vers l'API Laravel (avec ajout de la récupération du profil)
         const [ordersRes, usersRes, productsRes, profileRes] = await Promise.allSettled([
           fetch("http://localhost:8000/api/admin/orders", { headers, credentials: "include" }),
           fetch("http://localhost:8000/api/users", { headers, credentials: "include" }),
@@ -85,7 +86,6 @@ function AdminPage() {
           fetch("http://localhost:8000/api/profile", { headers, credentials: "include" }),
         ]);
 
-        // 1. Calcul du Revenu Total & Nombre de Commandes
         if (ordersRes.status === "fulfilled" && ordersRes.value.ok) {
           const dataData = await ordersRes.value.json();
           const ordersList: OrderSummary[] = Array.isArray(dataData)
@@ -100,7 +100,6 @@ function AdminPage() {
           setTotalRevenue(revenue);
         }
 
-        // 2. Nombre total d'utilisateurs
         if (usersRes.status === "fulfilled" && usersRes.value.ok) {
           const usersData = await usersRes.value.json();
           const usersList: ItemSummary[] = Array.isArray(usersData)
@@ -109,7 +108,6 @@ function AdminPage() {
           setTotalUsersCount(usersList.length);
         }
 
-        // 3. Nombre total de produits
         if (productsRes.status === "fulfilled" && productsRes.value.ok) {
           const productsData = await productsRes.value.json();
           const productsList: ItemSummary[] = Array.isArray(productsData)
@@ -118,7 +116,6 @@ function AdminPage() {
           setTotalProductsCount(productsList.length);
         }
 
-        // 4. Profil de l'administrateur connecté
         if (profileRes.status === "fulfilled" && profileRes.value.ok) {
           const profileData = await profileRes.value.json();
           const userData = profileData.user || profileData.data || profileData;
@@ -135,12 +132,39 @@ function AdminPage() {
     fetchDashboardStats();
   }, []);
 
+  // Fonction de déconnexion
+  const handleLogout = async () => {
+    const xsrfToken = getXsrfToken();
+    const headers: Record<string, string> = {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    };
+    if (xsrfToken) headers["X-XSRF-TOKEN"] = xsrfToken;
+
+    try {
+      const response = await fetch("http://localhost:8000/api/logout", {
+        method: "POST",
+        headers,
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        // Redirection vers l'accueil après déconnexion réussie
+        navigate("/");
+      } else {
+        console.error("Erreur lors de la déconnexion");
+      }
+    } catch (error) {
+      console.error("Erreur réseau lors de la déconnexion:", error);
+    }
+  };
+
   const navItems = [
     { id: "dashboard", label: "Dashboard", icon: <FaTachometerAlt /> },
     { id: "users", label: "Users", icon: <FaUsers /> },
     { id: "products", label: "Products", icon: <MdOutlineProductionQuantityLimits /> },
     { id: "categories", label: "Categories", icon: <TbCategoryPlus /> },
-    { id: "orders", label: "Orders", icon: <CgReorder /> },
+    { id: "orders", label: "Orders", icon: <FaReceipt /> },
     { id: "banner", label: "Bannière", icon: <PiFlagBannerFoldFill /> },
     { id: "analytics", label: "Analytics", icon: <FaChartBar /> },
   ];
@@ -150,7 +174,6 @@ function AdminPage() {
       case "dashboard":
         return (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            {/* Total Revenue */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all duration-200 hover:-translate-y-0.5">
               <div className="flex items-center justify-between">
                 <div>
@@ -171,7 +194,6 @@ function AdminPage() {
               </div>
             </div>
 
-            {/* Total Users */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all duration-200 hover:-translate-y-0.5">
               <div className="flex items-center justify-between">
                 <div>
@@ -192,7 +214,6 @@ function AdminPage() {
               </div>
             </div>
 
-            {/* Total Orders */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all duration-200 hover:-translate-y-0.5">
               <div className="flex items-center justify-between">
                 <div>
@@ -208,12 +229,11 @@ function AdminPage() {
                   </div>
                 </div>
                 <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                  <CgReorder className="text-orange-600 text-xl" />
+                  <FaReceipt className="text-orange-600 text-xl" />
                 </div>
               </div>
             </div>
 
-            {/* Products */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all duration-200 hover:-translate-y-0.5">
               <div className="flex items-center justify-between">
                 <div>
@@ -282,7 +302,6 @@ function AdminPage() {
             <ProductList />
           </div>
         );
-
 
       default:
         return null;
@@ -387,14 +406,15 @@ function AdminPage() {
                   Soyez les bienvenus. Voici l'essentiel de l'actualité de ce jour.
                 </p>
               </div>
-              <div className="flex items-center space-x-4">
-                <div className="relative">
-                  <input
-                    type="text"
-                    placeholder="Search..."
-                    className="pl-4 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-sm"
-                  />
-                </div>
+              <div className="flex items-center">
+                {/* Remplacement de la barre de recherche par le bouton de déconnexion */}
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 hover:bg-red-600 hover:text-white rounded-lg font-semibold text-sm transition-colors duration-200 border border-red-100"
+                >
+                  <FaSignOutAlt className="text-lg" />
+                  Se déconnecter
+                </button>
               </div>
             </div>
           </div>

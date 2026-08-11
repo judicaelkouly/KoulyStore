@@ -32,7 +32,7 @@ function Login() {
   const [errors, setErrors] = useState<ValidationErrors>({});
   const [successMessage, setSuccessMessage] = useState<string>('');
 
-  //  ÉTAPE 1 : Validation Identifiants -> Envoi OTP
+  // 1. ÉTAPE 1 : Validation Identifiants -> Envoi OTP
   const handleLoginSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
@@ -120,7 +120,7 @@ function Login() {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-gray-900 flex items-center justify-center p-4 sm:p-6 transition-colors">
       
-      {/* CARD PRINCIPALE DIMENTIONNÉE ULTRA-COMPACTE */}
+      {/* CARD PRINCIPALE DIMENSIONNÉE ULTRA-COMPACTE */}
       <div className="max-w-3xl w-full rounded-2xl md:rounded-3xl bg-white dark:bg-gray-800 shadow-xl border border-gray-100 dark:border-gray-700/50 flex overflow-hidden my-auto">
         
         {/* COLONNE GAUCHE : FORMULAIRE */}
@@ -188,9 +188,20 @@ function Login() {
 
                   {/* MOT DE PASSE */}
                   <div>
-                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                      Mot de passe
-                    </label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">
+                        Mot de passe
+                      </label>
+                      
+                      {/* 👈 LIEN MOT DE PASSE OUBLIÉ */}
+                      <a 
+                        href="/forgot-password" 
+                        className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 hover:underline transition-colors"
+                      >
+                        Mot de passe oublié ?
+                      </a>
+                    </div>
+
                     <div className="relative flex items-center">
                       <HiLockClosed className="absolute left-3.5 text-gray-400 text-lg pointer-events-none" />
                       <input

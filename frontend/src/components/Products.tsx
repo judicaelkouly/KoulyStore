@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { FaStar, FaRegStar } from "react-icons/fa6";
 
 // 1. Interfaces TypeScript pour les produits et catégories
 export interface Category {
@@ -18,6 +19,10 @@ export interface Product {
   is_active?: boolean | number;
   category_id?: number | string;
   category?: Category;
+  rating?: number;
+  average_rating?: number;
+  reviews_count?: number;
+  total_reviews?: number;
 }
 
 interface ProductsProps {
@@ -37,11 +42,27 @@ function Products({
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Gestion des actions d'ajout au panier / chargement
+  // État pour stocker les notes récupérées dynamiquement : { [productId]: { rating: 4.5, count: 12 } }
+  const [ratingsMap, setRatingsMap] = useState<Record<string | number, { rating: number; count: number }>>({});
+
   const [addingId, setAddingId] = useState<number | string | null>(null);
   const [notification, setNotification] = useState<string | null>(null);
 
-  // Helper pour extraire le token CSRF/XSRF des cookies
+  // Helper pour générer le rendu dynamique des étoiles
+  const renderStars = (rating: number = 0) => {
+    const stars = [];
+    const roundedRating = Math.round(rating);
+
+    for (let i = 1; i <= 5; i++) {
+      if (i <= roundedRating) {
+        stars.push(<FaStar key={i} className="text-amber-400" />);
+      } else {
+        stars.push(<FaRegStar key={i} className="text-gray-300 dark:text-gray-600" />);
+      }
+    }
+    return <div className="flex items-center gap-0.5 text-xs sm:text-sm">{stars}</div>;
+  };
+
   const getXsrfToken = (): string => {
     const cookies = document.cookie.split(";");
     for (let cookie of cookies) {
@@ -51,7 +72,6 @@ function Products({
     return "";
   };
 
-  // Helper pour vérifier rapidement si l'utilisateur est connecté
   const checkAuth = async (): Promise<boolean> => {
     try {
       const xsrfToken = getXsrfToken();
@@ -69,7 +89,7 @@ function Products({
     }
   };
 
-  // 📥 Récupération des produits depuis l'API avec support Recherche & Catégorie
+  // 📥 Récupération des produits
   useEffect(() => {
     const fetchProducts = async () => {
       setLoading(true);
@@ -99,12 +119,16 @@ function Products({
         }
 
         const data = await response.json();
-        const productList = Array.isArray(data)
+        const productList: Product[] = Array.isArray(data)
           ? data
           : data.products || data.data || [];
 
         setProducts(productList);
         setError(null);
+
+        // Récupérer dynamiquement les notes pour chaque produit
+        fetchRatingsForProducts(productList);
+
       } catch (err: any) {
         console.error("Erreur lors du chargement des produits:", err);
         setError(err.message || "Une erreur est survenue.");
@@ -120,6 +144,32 @@ function Products({
     return () => clearTimeout(timer);
   }, [searchQuery, selectedCategory]);
 
+  // Fonction pour charger la moyenne des notes de chaque produit
+  const fetchRatingsForProducts = (productList: Product[]) => {
+    productList.forEach(async (product) => {
+      // Si le backend renvoie déjà la note, inutile de refaire une requête
+      if (product.average_rating !== undefined || product.rating !== undefined) return;
+
+      try {
+        const res = await fetch(`http://localhost:8000/api/products/${product.id}/reviews`, {
+          headers: { Accept: "application/json" },
+        });
+        if (res.ok) {
+          const revData = await res.json();
+          setRatingsMap((prev) => ({
+            ...prev,
+            [product.id]: {
+              rating: revData.average_rating || 0,
+              count: revData.total_reviews || 0,
+            },
+          }));
+        }
+      } catch (e) {
+        console.error(`Erreur chargement note produit ${product.id}:`, e);
+      }
+    });
+  };
+
   // Filtrage local complémentaire
   const filteredProducts = products.filter((p) => {
     const isActive =
@@ -128,9 +178,7 @@ function Products({
       p.is_active === 1 ||
       (p as any).is_active === "1";
 
-    if (!isActive) {
-      return false;
-    }
+    if (!isActive) return false;
 
     if (selectedCategory) {
       const matchCategoryId =
@@ -160,7 +208,6 @@ function Products({
     return true;
   });
 
-  // Helper pour l'image d'un produit
   const getSingleImageUrl = (product: Product): string => {
     let rawImages = product.images;
 
@@ -195,7 +242,6 @@ function Products({
     return "https://images.unsplash.com/photo-1546868871-7041f2a55e12?auto=format&fit=crop&w=600&q=80";
   };
 
-  // 🛒 Action : Ajouter au panier avec gestion propre de l'authentification
   const handleAddToCart = async (
     e: React.MouseEvent,
     productId: number | string
@@ -206,7 +252,6 @@ function Products({
     setAddingId(productId);
 
     try {
-      // 1. Vérification préalable de la session
       const isAuthenticated = await checkAuth();
 
       if (!isAuthenticated) {
@@ -218,7 +263,6 @@ function Products({
         return;
       }
 
-      // 2. Utilisateur authentifié : envoi au backend
       const xsrfToken = getXsrfToken();
       const response = await fetch("http://localhost:8000/api/cart", {
         method: "POST",
@@ -234,7 +278,6 @@ function Products({
         }),
       });
 
-      // 3. Interception au cas où la session aurait expiré entre temps (401 / 419)
       if (response.status === 401 || response.status === 419) {
         navigate("/login", {
           state: {
@@ -258,7 +301,6 @@ function Products({
     }
   };
 
-  // 🚀 Action : Commander directement
   const handleDirectBuy = (e: React.MouseEvent, product: Product) => {
     e.preventDefault();
     e.stopPropagation();
@@ -273,7 +315,7 @@ function Products({
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 relative">
+    <div className="max-w-8xl mx-auto px-4 sm:px-6 py-8 relative">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <h1
           className="text-3xl sm:text-4xl font-bold text-slate-800 border-l-4 border-indigo-600 pl-4"
@@ -282,7 +324,6 @@ function Products({
           Trouvez votre produit idéal
         </h1>
 
-        {/* Badges d'état de recherche / filtre active */}
         <div className="flex flex-wrap items-center gap-2">
           {selectedCategory && (
             <span className="inline-flex items-center gap-1.5 bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs sm:text-sm font-medium px-3 py-1.5 rounded-full shadow-sm">
@@ -307,16 +348,14 @@ function Products({
         </div>
       </div>
 
-      {/* Notification temporaire */}
       {notification && (
         <div className="fixed bottom-5 right-5 z-50 bg-slate-900 text-white px-5 py-3 rounded-xl shadow-2xl text-xs sm:text-sm flex items-center gap-2 animate-bounce">
           <span>🛒</span> {notification}
         </div>
       )}
 
-      {/* État de Chargement */}
       {loading && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6">
           {[1, 2, 3, 4].map((i) => (
             <div
               key={i}
@@ -330,14 +369,12 @@ function Products({
         </div>
       )}
 
-      {/* Affichage des Erreurs */}
       {error && !loading && (
         <div className="bg-red-50 border border-red-200 text-red-600 p-4 rounded-xl text-center text-sm">
           {error}
         </div>
       )}
 
-      {/* Aucun produit disponible */}
       {!loading && !error && filteredProducts.length === 0 && (
         <div className="text-center py-16 bg-slate-50 rounded-2xl border border-dashed border-gray-200">
           <p className="text-gray-500 text-sm font-medium mb-3">
@@ -356,20 +393,23 @@ function Products({
         </div>
       )}
 
-      {/* Grille des Produits Actifs */}
       {!loading && !error && filteredProducts.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6">
           {filteredProducts.map((product) => {
             const hasOffer = Boolean(
               product.promo_price && Number(product.promo_price) > 0
             );
 
+            // Priorité : 1. Backend s'il existe, 2. HashMap récupérée, 3. Défaut (0)
+            const ratingData = ratingsMap[product.id];
+            const productRating = product.average_rating ?? product.rating ?? ratingData?.rating ?? 0;
+            const reviewsCount = product.total_reviews ?? product.reviews_count ?? ratingData?.count ?? 0;
+
             return (
               <div
                 key={product.id}
-                className="group relative bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between overflow-hidden hover:-translate-y-1"
+                className="group relative bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between overflow-hidden hover:-translate-y-1"
               >
-                {/* Lien vers la page de détails */}
                 <a href={`/details?id=${product.id}`} className="block relative">
                   <div className="relative overflow-hidden h-44 sm:h-64 bg-slate-50">
                     <img
@@ -382,20 +422,18 @@ function Products({
                       }}
                     />
 
-                    {/* Badge Promo */}
                     {hasOffer && (
                       <span className="absolute top-2 left-2 bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow">
                         PROMO
                       </span>
                     )}
 
-                    {/* Overlay et Boutons au Survol */}
                     <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-end p-3 gap-2">
                       <button
                         type="button"
                         onClick={(e) => handleAddToCart(e, product.id)}
                         disabled={addingId === product.id}
-                        className="w-full bg-white text-slate-900 hover:bg-slate-100 py-2 rounded-lg font-semibold text-xs shadow transition-all flex items-center justify-center gap-1.5 active:scale-95"
+                        className="w-full bg-white text-slate-900 hover:bg-slate-100 py-2 rounded-lg font-semibold text-xs shadow transition-all flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer"
                       >
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
@@ -417,7 +455,7 @@ function Products({
                       <button
                         type="button"
                         onClick={(e) => handleDirectBuy(e, product)}
-                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg font-semibold text-xs shadow transition-all flex items-center justify-center gap-1.5 active:scale-95"
+                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg font-semibold text-xs shadow transition-all flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer"
                       >
                         Acheter
                       </button>
@@ -425,20 +463,18 @@ function Products({
                   </div>
                 </a>
 
-                {/* Informations du Produit */}
                 <div className="p-4 flex flex-col justify-between flex-grow">
                   <div>
                     <a href={`/details?id=${product.id}`}>
-                      <h3 className="font-bold text-black text-lg sm:text-base text-center line-clamp-1 hover:text-indigo-600 transition-colors">
+                      <h3 className=" text-black text-lg sm:text-base text-center line-clamp-1 hover:text-indigo-600 transition-colors">
                         {product.title}
                       </h3>
                     </a>
-                    <p className="text-gray-400 text-xs mt-1 line-clamp-2">
+                    {/* <p className="text-gray-400 text-xs mt-1 line-clamp-2">
                       {product.description || "Aucune description disponible."}
-                    </p>
+                    </p> */}
                   </div>
 
-                  {/* Prix et Étoiles */}
                   <div className="mt-4 pt-2 border-t border-gray-50 flex items-center justify-between">
                     <div>
                       {hasOffer ? (
@@ -457,10 +493,17 @@ function Products({
                       )}
                     </div>
 
-                    <div className="flex text-amber-400 text-[10px] sm:text-lg">
-                      ★ ★ ★ ★ ☆
+                    {/* Affichage des Étoiles Dynamiques */}
+                    <div className="flex items-center gap-1">
+                      {renderStars(productRating)}
+                      {reviewsCount > 0 && (
+                        <span className="text-[10px] text-gray-400 font-medium">
+                          ({reviewsCount})
+                        </span>
+                      )}
                     </div>
                   </div>
+
                   <span className="text-gray-400 text-[10px] sm:text-xs text-center mt-1">
                     ({product.stock || 0}) Articles seulement restants
                   </span>

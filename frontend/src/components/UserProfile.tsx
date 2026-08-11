@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { CiLogout } from "react-icons/ci";
-import { FaTachometerAlt } from "react-icons/fa";
+import { FaTachometerAlt, FaStar } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 
 // Interfaces TypeScript
@@ -98,8 +98,18 @@ function UserProfile() {
 
   const [activeTab, setActiveTab] = useState<"info" | "orders" | "cart">("info");
   const [orderFilterTab, setOrderFilterTab] = useState<"active" | "cancelled">("active");
-  const [selectedOrder, setSelectedOrder] = useState<UserOrder | null>(null); // Pour afficher le détail de la commande
+  const [selectedOrder, setSelectedOrder] = useState<UserOrder | null>(null);
   const [isEditing, setIsEditing] = useState<boolean>(false);
+
+  // ÉTATS DE GESTION DU MODAL ET AVIS PRODUIT
+  const [reviewModalOpen, setReviewModalOpen] = useState<boolean>(false);
+  const [reviewProductId, setReviewProductId] = useState<string | number | null>(null);
+  const [reviewProductName, setReviewProductName] = useState<string>("");
+  const [reviewRating, setReviewRating] = useState<number>(5);
+  const [reviewHoverRating, setReviewHoverRating] = useState<number>(0);
+  const [reviewTitle, setReviewTitle] = useState<string>("");
+  const [reviewComment, setReviewComment] = useState<string>("");
+  const [submittingReview, setSubmittingReview] = useState<boolean>(false);
 
   const [formData, setFormData] = useState<UserData>({
     username: "",
@@ -148,57 +158,48 @@ function UserProfile() {
     return true;
   };
 
-  // Traitement universel des chemins d'images
- // Traitement universel et propre des URLs
-const formatUrl = (pathCandidate?: any): string | null => {
-  if (!pathCandidate) return null;
+  const formatUrl = (pathCandidate?: any): string | null => {
+    if (!pathCandidate) return null;
 
-  let target = pathCandidate;
+    let target = pathCandidate;
 
-  // Si c'est un objet (ex: { url: '...' } ou { path: '...' })
-  if (typeof pathCandidate === "object" && pathCandidate !== null) {
-    target = pathCandidate.url || pathCandidate.path || pathCandidate.image_path || pathCandidate.image || "";
-  }
-
-  if (!target || typeof target !== "string") return null;
-
-  // Si c'est déjà une URL absolue ou un blob/data
-  if (target.startsWith("http://") || target.startsWith("https://") || target.startsWith("blob:") || target.startsWith("data:")) {
-    return target;
-  }
-
-  // Nettoyage des slashes initiaux
-  let cleanPath = target.replace(/^\//, "");
-
-  // Si le chemin commence déjà par storage/, on ne le duplique pas
-  if (cleanPath.startsWith("storage/")) {
-    return `http://localhost:8000/${cleanPath}`;
-  }
-
-  return `http://localhost:8000/storage/${cleanPath}`;
-};
-
-const getItemImageUrl = (item: CartItem | OrderItemData): string | null => {
-  if (!item) return null;
-
-  // 1. Chercher d'abord dans l'objet item direct
-  let candidate = item.image_path || item.image_url || item.image;
-
-  // 2. Si non trouvé, chercher dans le produit associé (item.product)
-  if (!candidate && item.product) {
-    candidate =
-      item.product.image_path ||
-      item.product.image_url ||
-      item.product.image;
-
-    // 3. Cas où product.images est un tableau
-    if (!candidate && Array.isArray(item.product.images) && item.product.images.length > 0) {
-      candidate = item.product.images[0];
+    if (typeof pathCandidate === "object" && pathCandidate !== null) {
+      target = pathCandidate.url || pathCandidate.path || pathCandidate.image_path || pathCandidate.image || "";
     }
-  }
 
-  return formatUrl(candidate);
-};
+    if (!target || typeof target !== "string") return null;
+
+    if (target.startsWith("http://") || target.startsWith("https://") || target.startsWith("blob:") || target.startsWith("data:")) {
+      return target;
+    }
+
+    let cleanPath = target.replace(/^\//, "");
+
+    if (cleanPath.startsWith("storage/")) {
+      return `http://localhost:8000/${cleanPath}`;
+    }
+
+    return `http://localhost:8000/storage/${cleanPath}`;
+  };
+
+  const getItemImageUrl = (item: CartItem | OrderItemData): string | null => {
+    if (!item) return null;
+
+    let candidate = item.image_path || item.image_url || item.image;
+
+    if (!candidate && item.product) {
+      candidate =
+        item.product.image_path ||
+        item.product.image_url ||
+        item.product.image;
+
+      if (!candidate && Array.isArray(item.product.images) && item.product.images.length > 0) {
+        candidate = item.product.images[0];
+      }
+    }
+
+    return formatUrl(candidate);
+  };
 
   const getAvatarUrl = (rawAvatar?: string | null): string | null => {
     return formatUrl(rawAvatar);
@@ -258,7 +259,6 @@ const getItemImageUrl = (item: CartItem | OrderItemData): string | null => {
           setOrders(
             Array.isArray(dataOrders) ? dataOrders : dataOrders.orders || dataOrders.data || []
           );
-          //console.log("Commandes récupérées:", dataOrders);
         }
 
         const resCart = await fetch("http://localhost:8000/api/cart", {
@@ -518,6 +518,51 @@ const getItemImageUrl = (item: CartItem | OrderItemData): string | null => {
     }
   };
 
+  // OUVRIR LE MODAL DE NOTATION
+  const handleOpenReviewModal = (pId: string | number, pName: string) => {
+    setReviewProductId(pId);
+    setReviewProductName(pName);
+    setReviewRating(5);
+    setReviewTitle("");
+    setReviewComment("");
+    setReviewModalOpen(true);
+  };
+
+  // SOUMETTRE L'AVIS AU BACKEND
+  const handleSubmitReview = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!reviewProductId) return;
+
+    setSubmittingReview(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`http://localhost:8000/api/products/${reviewProductId}/reviews`, {
+        method: "POST",
+        headers: getCookieAuthHeaders(),
+        credentials: "include",
+        body: JSON.stringify({
+          rating: reviewRating,
+          title: reviewTitle,
+          comment: reviewComment,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Erreur lors de la soumission de l'avis.");
+      }
+
+      setSuccessMsg("Merci ! Votre avis a été publié avec succès.");
+      setReviewModalOpen(false);
+    } catch (err: any) {
+      setError(err.message || "Impossible d'envoyer votre avis.");
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="py-16 text-center text-gray-500 font-medium">
@@ -559,7 +604,7 @@ const getItemImageUrl = (item: CartItem | OrderItemData): string | null => {
   const displayedOrders = orderFilterTab === "active" ? activeOrders : cancelledOrders;
 
   return (
-    <div className="max-w-4xl mx-auto p-4 md:p-8 font-sans">
+    <div className="max-w-4xl mx-auto p-4 md:p-8 font-sans relative">
       {/* Notifications */}
       {error && (
         <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl flex items-center justify-between">
@@ -568,7 +613,7 @@ const getItemImageUrl = (item: CartItem | OrderItemData): string | null => {
         </div>
       )}
       {successMsg && (
-        <div className="mb-4 p-4 bg-emerald-50  border-emerald-200 text-emerald-700 text-sm rounded-xl flex items-center justify-between">
+        <div className="mb-4 p-4 bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm rounded-xl flex items-center justify-between">
           <span>{successMsg}</span>
           <button onClick={() => setSuccessMsg(null)} className="font-bold text-emerald-700 ml-4">&times;</button>
         </div>
@@ -856,9 +901,8 @@ const getItemImageUrl = (item: CartItem | OrderItemData): string | null => {
       {activeTab === "orders" && (
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
           {selectedOrder ? (
-            /* VUE DÉTAILLÉE DE LA COMMANDE (Inspirée de la capture) */
+            /* VUE DÉTAILLÉE DE LA COMMANDE */
             <div className="space-y-6">
-              {/* En-tête avec bouton retour */}
               <div className="flex items-center gap-3 pb-2 border-b border-gray-200">
                 <button
                   onClick={() => setSelectedOrder(null)}
@@ -870,7 +914,6 @@ const getItemImageUrl = (item: CartItem | OrderItemData): string | null => {
                 <h2 className="text-lg font-bold text-gray-900">Détails de la commande</h2>
               </div>
 
-              {/* Résumé commande */}
               <div className="text-sm text-gray-700 space-y-1">
                 <p className="font-bold text-base text-gray-900">
                   Commande n° {selectedOrder.order_number || selectedOrder.id}
@@ -897,6 +940,7 @@ const getItemImageUrl = (item: CartItem | OrderItemData): string | null => {
                     ? selectedOrder.items
                     : [{} as OrderItemData]
                   ).map((item, idx) => {
+                    const productId = item.product_id || item.product?.id;
                     const itemTitle =
                       item.product_title ||
                       item.title ||
@@ -910,13 +954,13 @@ const getItemImageUrl = (item: CartItem | OrderItemData): string | null => {
                     const itemImg = getItemImageUrl(item);
 
                     return (
-                      <div key={idx} className="flex flex-col sm:flex-row gap-4 items-start">
+                      <div key={idx} className="flex flex-col sm:flex-row gap-4 items-start border-b border-gray-100 pb-4 last:border-b-0 last:pb-0">
                         <div className="w-24 h-24 rounded-md border border-gray-100 bg-gray-50 shrink-0 overflow-hidden flex items-center justify-center p-1">
                           {itemImg ? (
                             <img
                               src={itemImg}
                               alt={itemTitle}
-                              className="w-full h-full object-contain"
+                              className="w-full h-full object-cover rounded-md transition-transform hover:scale-105"
                             />
                           ) : (
                             <i className="fas fa-box text-gray-300 text-3xl"></i>
@@ -924,14 +968,12 @@ const getItemImageUrl = (item: CartItem | OrderItemData): string | null => {
                         </div>
 
                         <div className="flex-1 space-y-1.5">
-                          {/* Badge de statut */}
                           <div>
                             <span className="inline-block bg-green-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-sm uppercase tracking-wide">
                               {selectedOrder.status.toUpperCase()}
                             </span>
                           </div>
 
-                          {/* Date indicative */}
                           {selectedOrder.delivery_date_info && (
                             <p className="text-xs font-bold text-gray-800">
                               {selectedOrder.delivery_date_info}
@@ -956,6 +998,19 @@ const getItemImageUrl = (item: CartItem | OrderItemData): string | null => {
                               </span>
                             )}
                           </div>
+
+                          {/* BOUTON ÉVALUER CE PRODUIT DANS LA VUE DÉTAILLÉE */}
+                          {productId && (
+                            <div className="pt-2">
+                              <button
+                                onClick={() => handleOpenReviewModal(productId, itemTitle)}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 text-xs font-bold rounded-lg border border-amber-200 transition-colors"
+                              >
+                                <FaStar className="text-amber-500" />
+                                <span>Évaluer ce produit</span>
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </div>
                     );
@@ -965,7 +1020,6 @@ const getItemImageUrl = (item: CartItem | OrderItemData): string | null => {
 
               {/* Grid PAIEMENT et LIVRAISON */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Section PAIEMENT */}
                 <div className="border border-gray-200 rounded-lg p-4 bg-white space-y-3">
                   <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-100 pb-2">
                     PAIEMENT
@@ -1003,7 +1057,6 @@ const getItemImageUrl = (item: CartItem | OrderItemData): string | null => {
                   </div>
                 </div>
 
-                {/* Section LIVRAISON (Affichage adresse uniquement) */}
                 <div className="border border-gray-200 rounded-lg p-4 bg-white space-y-3">
                   <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-100 pb-2">
                     LIVRAISON
@@ -1030,7 +1083,6 @@ const getItemImageUrl = (item: CartItem | OrderItemData): string | null => {
             <>
               <h2 className="text-xl font-bold text-gray-800 mb-4">Vos commandes</h2>
 
-              {/* Sub-tabs filtres */}
               <div className="flex border-b border-gray-200 mb-6">
                 <button
                   onClick={() => setOrderFilterTab("active")}
@@ -1062,6 +1114,7 @@ const getItemImageUrl = (item: CartItem | OrderItemData): string | null => {
                 <div className="space-y-4">
                   {displayedOrders.map((order) => {
                     const firstItem = order.items && order.items.length > 0 ? order.items[0] : null;
+                    const productId = firstItem?.product_id || firstItem?.product?.id;
                     const title =
                       firstItem?.product_title ||
                       firstItem?.title ||
@@ -1085,20 +1138,18 @@ const getItemImageUrl = (item: CartItem | OrderItemData): string | null => {
                         className="border border-gray-200 rounded-lg p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white hover:border-gray-300 transition-colors"
                       >
                         <div className="flex items-start gap-4">
-                          {/* Photo produit */}
                           <div className="w-20 h-20 rounded-md border border-gray-100 bg-gray-50 shrink-0 overflow-hidden flex items-center justify-center p-1">
                             {imgUrl ? (
                               <img
                                 src={imgUrl}
                                 alt={title}
-                                className="w-full h-full object-contain"
+                                className="w-full h-full object-cover rounded-md"
                               />
                             ) : (
                               <i className="fas fa-box text-gray-300 text-2xl"></i>
                             )}
                           </div>
 
-                          {/* Infos produit */}
                           <div className="flex flex-col gap-1">
                             <h3 className="text-sm font-semibold text-gray-900 leading-snug">
                               {title}
@@ -1149,11 +1200,21 @@ const getItemImageUrl = (item: CartItem | OrderItemData): string | null => {
                           </div>
                         </div>
 
-                        {/* Bouton Voir Détails */}
-                        <div className="self-end sm:self-center">
+                        {/* Boutons d'action : Détails + Évaluer */}
+                        <div className="flex flex-col sm:items-end gap-2 self-end sm:self-center">
+                          {productId && (
+                            <button
+                              onClick={() => handleOpenReviewModal(productId, title)}
+                              className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 text-xs font-bold rounded-lg border border-amber-200 transition-colors"
+                            >
+                              <FaStar className="text-amber-500" />
+                              <span>Évaluer</span>
+                            </button>
+                          )}
+
                           <button
                             onClick={() => setSelectedOrder(order)}
-                            className="text-orange-500 hover:text-orange-600 font-semibold text-sm transition-colors"
+                            className="text-orange-500 hover:text-orange-600 font-semibold text-sm transition-colors text-right"
                           >
                             Détails
                           </button>
@@ -1276,6 +1337,112 @@ const getItemImageUrl = (item: CartItem | OrderItemData): string | null => {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* MODAL POUR ÉVALUER LE PRODUIT */}
+      {reviewModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-fade-in">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl relative space-y-4">
+            <button
+              onClick={() => setReviewModalOpen(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 font-bold text-lg"
+            >
+              &times;
+            </button>
+
+            <div>
+              <h3 className="text-lg font-bold text-gray-900">Évaluer le produit</h3>
+              <p className="text-xs text-gray-500 mt-1 truncate">
+                {reviewProductName}
+              </p>
+            </div>
+
+            <form onSubmit={handleSubmitReview} className="space-y-4">
+              {/* Étoiles interactives */}
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                  Votre note
+                </label>
+                <div className="flex items-center gap-1">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setReviewRating(star)}
+                      onMouseEnter={() => setReviewHoverRating(star)}
+                      onMouseLeave={() => setReviewHoverRating(0)}
+                      className="text-2xl transition-transform hover:scale-110 focus:outline-none"
+                    >
+                      <FaStar
+                        className={
+                          star <= (reviewHoverRating || reviewRating)
+                            ? "text-amber-400"
+                            : "text-gray-200"
+                        }
+                      />
+                    </button>
+                  ))}
+                  <span className="ml-2 text-sm font-semibold text-gray-700">
+                    {reviewHoverRating || reviewRating} / 5
+                  </span>
+                </div>
+              </div>
+
+              {/* Titre de l'avis */}
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
+                  Titre résumé (Optionnel)
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ex: Excellent produit, très confortable !"
+                  value={reviewTitle}
+                  onChange={(e) => setReviewTitle(e.target.value)}
+                  className="w-full text-sm py-2 px-3 rounded-lg border border-gray-300 focus:border-indigo-500 outline-none"
+                />
+              </div>
+
+              {/* Commentaire */}
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
+                  Votre commentaire (Optionnel)
+                </label>
+                <textarea
+                  rows={3}
+                  placeholder="Partagez votre expérience avec ce produit..."
+                  value={reviewComment}
+                  onChange={(e) => setReviewComment(e.target.value)}
+                  className="w-full text-sm py-2 px-3 rounded-lg border border-gray-300 focus:border-indigo-500 outline-none resize-none"
+                />
+              </div>
+
+              {/* Actions */}
+              <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => setReviewModalOpen(false)}
+                  className="px-4 py-2 text-xs font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingReview}
+                  className="px-5 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 rounded-lg transition-colors flex items-center gap-2"
+                >
+                  {submittingReview ? (
+                    <>
+                      <i className="fas fa-spinner fa-spin"></i>
+                      <span>Envoi...</span>
+                    </>
+                  ) : (
+                    <span>Publier l'avis</span>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

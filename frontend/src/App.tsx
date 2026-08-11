@@ -5,6 +5,7 @@ import Details from './components/Details'
 import Payment from './components/Payment'
 import Register from './components/Register'
 import Login from './components/Login'
+import ForgotPassword from './components/ForgotPassword'
 
 import AdminPage from './components/admin/AdminPage'
 import AddProduct from './components/admin/products/AddProduct'
@@ -27,6 +28,7 @@ function App() {
             <Route path="/checkout" element={<Payment />} />
             <Route path="/register" element={<Register />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/profile" element={<UserProfile />} />
 
              {/* Routes administratives */}

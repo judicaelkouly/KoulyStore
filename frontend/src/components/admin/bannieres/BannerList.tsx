@@ -247,7 +247,7 @@ function BannerList() {
             <h3 className="text-lg font-bold text-gray-900">Ajouter une Bannière</h3>
             <form onSubmit={handleSubmit} className="space-y-4 text-sm">
               <div>
-                <label className="block text-gray-700 font-medium mb-1">Titre +/7=v ;</label>
+                <label className="block text-gray-700 font-medium mb-1">Titre</label>
                 <input
                   type="text"
                   className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-indigo-500"
