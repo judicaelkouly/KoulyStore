@@ -26,10 +26,10 @@ function Footer() {
                         <h3 className='text-sm text-white font-semibold tracking-wider uppercase'>Navigation</h3>
                         <div className="flex flex-col gap-3 mt-6">
                             <a href="#" className='text-sm text-gray-400 hover:text-indigo-400 transition-colors duration-200'>Accueil</a>
-                            <a href="#" className='text-sm text-gray-400 hover:text-indigo-400 transition-colors duration-200'>À propos</a>
-                            <a href="#" className='text-sm text-gray-400 hover:text-indigo-400 transition-colors duration-200'>Nos Produits</a>
-                            <a href="#" className='text-sm text-gray-400 hover:text-indigo-400 transition-colors duration-200'>Contact</a>
-                            <a href="#" className='text-sm text-gray-400 hover:text-indigo-400 transition-colors duration-200'>FAQ</a>
+                            <a href="/about" className='text-sm text-gray-400 hover:text-indigo-400 transition-colors duration-200'>À propos</a>
+                            <a href="#products" className='text-sm text-gray-400 hover:text-indigo-400 transition-colors duration-200'>Nos Produits</a>
+                            <a href="/service-client" className='text-sm text-gray-400 hover:text-indigo-400 transition-colors duration-200'>Service Client</a>
+                            <a href="/faq" className='text-sm text-gray-400 hover:text-indigo-400 transition-colors duration-200'>FAQ</a>
                         </div>
                     </div>
 

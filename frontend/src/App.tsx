@@ -6,6 +6,9 @@ import Payment from './components/Payment'
 import Register from './components/Register'
 import Login from './components/Login'
 import ForgotPassword from './components/ForgotPassword'
+import Faq from './components/Faq'
+import About from './components/About'
+import ContactReturns from './components/Service-client'
 
 import AdminPage from './components/admin/AdminPage'
 import AddProduct from './components/admin/products/AddProduct'
@@ -30,6 +33,9 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/profile" element={<UserProfile />} />
+            <Route path="/faq" element={<Faq />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/service-client" element={<ContactReturns />} />
 
              {/* Routes administratives */}
 

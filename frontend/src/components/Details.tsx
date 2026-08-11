@@ -546,7 +546,7 @@ function Details() {
                     ) : (
                       <ul className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm leading-relaxed space-y-1.5 list-disc pl-4">
                         <li>Livraison rapide en 24h à 48h partout en Côte d'Ivoire.</li>
-                        <li>Paiement à la livraison accepté (Wave, Orange Money, Cash).</li>
+                        <li>Paiement à la livraison accepté (Wave, Orange Money, MTN Money, Cash).</li>
                         <li>Retour gratuit sous 7 jours sous conditions.</li>
                       </ul>
                     )}
@@ -566,7 +566,7 @@ function Details() {
               </h2>
               <button 
                 type="button"
-                className="text-xs sm:text-sm font-bold text-orange-500 hover:text-orange-600 flex items-center gap-1 transition-colors"
+                className="text-xs sm:text-sm font-bold text-indigo-600 hover:text-indigo-700 flex items-center gap-1 transition-colors"
               >
                 Voir plus &gt;
               </button>
