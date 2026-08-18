@@ -101,16 +101,17 @@ function Register() {
         <div className="w-full lg:w-1/2 p-6 sm:p-10 flex flex-col justify-center">
           
           {/* LOGO */}
-          <div className="text-center">
-            <a href="/" className="inline-flex items-center gap-2 justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" className="bi bi-cart4 text-indigo-600" viewBox="0 0 16 16">
-                <path d="M0 2.5A.5.5 0 0 1 .5 2H2a.5.5 0 0 1 .485.379L2.89 4H14.5a.5.5 0 0 1 .485.621l-1.5 6A.5.5 0 0 1 13 11H4a.5.5 0 0 1-.485-.379L1.61 3H.5a.5.5 0 0 1-.5-.5M3.14 5l.5 2H5V5zM6 5v2h2V5zm3 0v2h2V5zm3 0v2h1.36l.5-2zm1.11 3H12v2h.61zM11 8H9v2h2zM8 8H6v2h2zM5 8H3.89l.5 2H5zm0 5a1 1 0 1 0 0 2 1 1 0 0 0 0-2m-2 1a2 2 0 1 1 4 0 2 2 0 0 1-4 0m9-1a1 1 0 1 0 0 2 1 1 0 0 0 0-2m-2 1a2 2 0 1 1 4 0 2 2 0 0 1-4 0"/>
-              </svg>
-              <span className="text-xl font-extrabold text-indigo-600 tracking-tight">
-                Kouly<span className="text-gray-900 dark:text-white">'Store</span>
-              </span>
-            </a>
-          </div>
+          
+            <div className="flex items-center justify-center">
+         <a href="/" className="flex items-center gap-3 group">
+            <img 
+              src="/src/assets/logo3.png" 
+              alt="Kouly'Store Logo" 
+              className="h-10 sm:h-20 w-auto object-contain transition-transform group-hover:scale-105"
+            />
+          </a>
+        </div>
+        
 
           <div className="mt-6 flex flex-col items-center">
             <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight text-center">
@@ -284,11 +285,11 @@ function Register() {
         </div>
 
         {/* COLONNE DROITE : IMAGE ADAPTÉE & COMPACTE */}
-        <div className="hidden lg:block lg:w-1/2 relative bg-slate-900">
+        <div className="hidden lg:block lg:w-1/2 relative ">
           <img 
-            src="/src/assets/auth.jpeg" 
+            src="/src/assets/hero3.png" 
             alt="Shopping Expérience Kouly'Store" 
-            className="w-full h-full object-cover opacity-90"
+            className="w-full h-full object-cove opacity-90"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent flex flex-col justify-end p-8">
             <h2 className="text-2xl font-black text-white tracking-tight">

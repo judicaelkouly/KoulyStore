@@ -319,15 +319,17 @@ function AdminPage() {
       <div className="fixed inset-y-0 left-0 w-64 bg-gray-900 shadow-xl z-50 rounded-lg flex flex-col justify-between">
         <div>
           <div className="flex items-center justify-center h-16 bg-gray-900">
-            <div className="w-full mt-10 mr-15 md:w-[45%] lg:w-[35%] flex flex-col items-center md:items-start text-center md:text-left">
-              <a href="#" className="flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" fill="currentColor" className="bi bi-cart4 text-indigo-600" viewBox="0 0 16 16">
-                  <path d="M0 2.5A.5.5 0 0 1 .5 2H2a.5.5 0 0 1 .485.379L2.89 4H14.5a.5.5 0 0 1 .485.621l-1.5 6A.5.5 0 0 1 13 11H4a.5.5 0 0 1-.485-.379L1.61 3H.5a.5.5 0 0 1-.5-.5M3.14 5l.5 2H5V5zM6 5v2h2V5zm3 0v2h2V5zm3 0v2h1.36l.5-2zm1.11 3H12v2h.61zM11 8H9v2h2zM8 8H6v2h2zM5 8H3.89l.5 2H5zm0 5a1 1 0 1 0 0 2 1 1 0 0 0 0-2m-2 1a2 2 0 1 1 4 0 2 2 0 0 1-4 0m9-1a1 1 0 1 0 0 2 1 1 0 0 0 0-2m-2 1a2 2 0 1 1 4 0 2 2 0 0 1-4 0"/>
-                </svg>
-                <span className="text-xl font-extrabold text-indigo-600 tracking-tight">
-                  Kouly<span className="text-white">'Store</span>
-                </span>
-              </a>
+            <div className="w-full mt-10 mr-15 md:w-[45%] lg:w-[70%] flex flex-col items-center md:items-start text-center md:text-left">
+               <div className="flex items-center">
+                            <a href="/" className="flex items-center gap-3 group">
+                                <img 
+                                src="/src/assets/logo4.png" 
+                                alt="Kouly'Store Logo"
+                                className="h-10 sm:h-40 w-auto object-contain transition-transform group-hover:scale-105"
+
+                                />
+                            </a>
+                            </div>
               <div className='w-full max-w-52 h-px mt-6 bg-gradient-to-r from-transparent via-white/20 to-transparent md:bg-none'></div>
             </div>
           </div>

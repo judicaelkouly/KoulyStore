@@ -8,7 +8,7 @@ interface ValidationError {
 function AddCategory() {
   const [categoryName, setCategoryName] = useState("");
   const [hasSizes, setHasSizes] = useState(false);
-  const [sizeType, setSizeType] = useState<"vêtements" | "chaussures" | "custom">("vêtements");
+  const [sizeType, setSizeType] = useState<"vêtements" | "chaussures"| "schoes_hom" | "schoes_hom" | "schoes_hom" | "schoes_hom" | "custom">("vêtements");
   const [customSizes, setCustomSizes] = useState("");
   
   // États pour l'image
@@ -46,9 +46,9 @@ function AddCategory() {
        // 1. Calcul des tailles
     const computedSizes = hasSizes
       ? sizeType === "vêtements"
-        ? ["XS", "S", "M", "L", "XL", "XXL"]
+        ? ["XXS","XS", "S", "M", "L", "XL", "XXL","3XL", "4XL"]
         : sizeType === "chaussures"
-        ? ["37", "38", "39", "40", "41", "42", "43", "44"]
+        ? ["25", "26", "27", "28", "29", "30", "31","32","33","34","35","36","37", "38", "39", "40", "41", "42", "43", "44"]
         : customSizes.split(",").map((s) => s.trim()).filter((s) => s !== "")
       : [];
 
@@ -273,7 +273,7 @@ function AddCategory() {
                   onChange={() => setSizeType("chaussures")}
                   className="text-indigo-600 focus:ring-indigo-500"
                 />
-                <span>Pointures chaussures (37 à 44)</span>
+                <span>Pointures chaussures (25 à 44)</span>
               </label>
 
               <label className="flex items-center space-x-2 text-sm text-gray-700 cursor-pointer">

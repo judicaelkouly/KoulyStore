@@ -133,17 +133,16 @@ function Header() {
 
   return (
     <header className="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between gap-4">
+      <div className="max-w-7xl mx-auto px-4 h-25 flex items-center justify-between gap-4">
         
         {/* LOGO (À GAUCHE - Redirige vers l'accueil) */}
         <div className="flex items-center">
-          <a href="/" className="flex items-center gap-2 group">
-            <div className="w-10 h-10 bg-indigo-600 text-white rounded-xl flex items-center justify-center font-black text-xl shadow-md group-hover:bg-indigo-700 transition-colors">
-              K
-            </div>
-            <span className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-              Kouly<span className="text-indigo-600">'Store</span>
-            </span>
+         <a href="/" className="flex items-center gap-3 group">
+            <img 
+              src="/src/assets/logo3.png" 
+              alt="Kouly'Store Logo" 
+              className="h-10 sm:h-20 w-auto object-contain transition-transform group-hover:scale-105"
+            />
           </a>
         </div>
 
@@ -210,7 +209,7 @@ function Header() {
         </div>
 
         {/* NAVIGATION DESKTOP */}
-        <nav className="hidden lg:flex items-center gap-6 text-xs font-bold uppercase tracking-wider text-slate-600">
+        <nav className="hidden lg:flex items-center gap-6 text-lg font-bold uppercase tracking-wider text-slate-600">
           <a href="#products" className="hover:text-indigo-600 transition-colors">Boutique</a>
           <a href="/service-client" className="hover:text-indigo-600 transition-colors">Service Client</a>
         </nav>
@@ -236,15 +235,15 @@ function Header() {
           <div className="hidden md:flex items-center gap-2">
             <a
               href="/register"
-              className="px-4 py-2 text-xs font-extrabold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-all"
+              className="px-4 py-2 text-xl font-extrabold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-all"
             >
               S'inscrire
             </a>
             <a
               href="/login"
-              className="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-extrabold px-4 py-2 rounded-xl transition-all shadow-md active:scale-95"
+              className="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xl font-extrabold px-4 py-2 rounded-xl transition-all shadow-md active:scale-95"
             >
-              <MdPerson className="text-base" />
+              <MdPerson className="" />
               <span>Connexion</span>
             </a>
           </div>

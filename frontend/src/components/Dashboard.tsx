@@ -3,6 +3,7 @@ import Header from "./Header";
 import HeaderConnect from "./HeaderConnect";
 import Products from "./Products";
 import Footer from "./Footer";
+import { BiSolidCategoryAlt } from "react-icons/bi";
 
 // Interfaces TypeScript
 interface Category {
@@ -425,7 +426,8 @@ function Dashboard() {
                 </span>
               </div>
               <div className="flex items-center justify-center h-24 w-full mb-2 overflow-hidden rounded-lg bg-indigo-100/50 text-indigo-600 font-bold text-xl">
-                <img src="/src/assets/all-cat.jpeg" alt="All Categories" className="w-full h-full object-cover" />
+                <BiSolidCategoryAlt  className="w-full h-full object-cover"/>
+
               </div>
               <h3 className="font-bold text-center text-xs text-slate-800 truncate px-0.5">
                 All Categories

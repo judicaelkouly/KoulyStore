@@ -38,11 +38,17 @@ function Products({
 }: ProductsProps) {
   const navigate = useNavigate();
 
+  // États pour les produits et la pagination
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [loadingMore, setLoadingMore] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // État pour stocker les notes récupérées dynamiquement : { [productId]: { rating: 4.5, count: 12 } }
+  const [page, setPage] = useState<number>(1);
+  const [hasMore, setHasMore] = useState<boolean>(true);
+  const PER_PAGE = 30;
+
+  // État pour stocker les notes récupérées dynamiquement
   const [ratingsMap, setRatingsMap] = useState<Record<string | number, { rating: number; count: number }>>({});
 
   const [addingId, setAddingId] = useState<number | string | null>(null);
@@ -89,65 +95,98 @@ function Products({
     }
   };
 
-  // 📥 Récupération des produits
+  // 📥 Récupération initiale ou réinitialisation lors d'un changement de filtre (page = 1)
   useEffect(() => {
-    const fetchProducts = async () => {
-      setLoading(true);
-      try {
-        const params = new URLSearchParams();
-
-        if (searchQuery.trim()) {
-          params.append("search", searchQuery.trim());
-        }
-
-        if (selectedCategory) {
-          params.append("category_id", String(selectedCategory.id));
-        }
-
-        const queryString = params.toString() ? `?${params.toString()}` : "";
-        const response = await fetch(
-          `http://localhost:8000/api/products${queryString}`,
-          {
-            headers: {
-              Accept: "application/json",
-            },
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error("Impossible de récupérer la liste des produits.");
-        }
-
-        const data = await response.json();
-        const productList: Product[] = Array.isArray(data)
-          ? data
-          : data.products || data.data || [];
-
-        setProducts(productList);
-        setError(null);
-
-        // Récupérer dynamiquement les notes pour chaque produit
-        fetchRatingsForProducts(productList);
-
-      } catch (err: any) {
-        console.error("Erreur lors du chargement des produits:", err);
-        setError(err.message || "Une erreur est survenue.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    const timer = setTimeout(() => {
-      fetchProducts();
-    }, 300);
-
-    return () => clearTimeout(timer);
+    setPage(1);
+    setProducts([]);
+    setHasMore(true);
+    fetchProducts(1, true);
   }, [searchQuery, selectedCategory]);
+
+  // Fonction principale de chargement des produits (par page)
+  const fetchProducts = async (pageToFetch: number, isReset: boolean = false) => {
+    if (isReset) {
+      setLoading(true);
+    } else {
+      setLoadingMore(true);
+    }
+    setError(null);
+
+    try {
+      const params = new URLSearchParams();
+      params.append("page", String(pageToFetch));
+      params.append("per_page", String(PER_PAGE));
+
+      if (searchQuery.trim()) {
+        params.append("search", searchQuery.trim());
+      }
+
+      if (selectedCategory) {
+        params.append("category_id", String(selectedCategory.id));
+      }
+
+      const response = await fetch(
+        `http://localhost:8000/api/products?${params.toString()}`,
+        {
+          headers: {
+            Accept: "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Impossible de récupérer la liste des produits.");
+      }
+
+      const data = await response.json();
+
+      // Extraction des produits gérant les réponses paginées Laravel (data.data) ou simples tableaux
+      const newProducts: Product[] = Array.isArray(data)
+        ? data
+        : data.data || data.products || [];
+
+      // Vérification s'il reste d'autres pages à charger
+      if (data.current_page && data.last_page) {
+        setHasMore(data.current_page < data.last_page);
+      } else {
+        setHasMore(newProducts.length === PER_PAGE);
+      }
+
+      if (isReset) {
+        setProducts(newProducts);
+      } else {
+        // Empêche les doublons éventuels
+        setProducts((prev) => {
+          const existingIds = new Set(prev.map((p) => p.id));
+          const filteredNew = newProducts.filter((p) => !existingIds.has(p.id));
+          return [...prev, ...filteredNew];
+        });
+      }
+
+      // Récupérer les notes des nouveaux produits
+      fetchRatingsForProducts(newProducts);
+
+    } catch (err: any) {
+      console.error("Erreur lors du chargement des produits:", err);
+      setError(err.message || "Une erreur est survenue.");
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+    }
+  };
+
+  // Handler pour déclencher le chargement des 25 produits suivants
+  const handleLoadMore = () => {
+    if (!loadingMore && hasMore) {
+      const nextPage = page + 1;
+      setPage(nextPage);
+      fetchProducts(nextPage, false);
+    }
+  };
 
   // Fonction pour charger la moyenne des notes de chaque produit
   const fetchRatingsForProducts = (productList: Product[]) => {
     productList.forEach(async (product) => {
-      // Si le backend renvoie déjà la note, inutile de refaire une requête
       if (product.average_rating !== undefined || product.rating !== undefined) return;
 
       try {
@@ -354,9 +393,10 @@ function Products({
         </div>
       )}
 
+      {/* Squelette de chargement initial */}
       {loading && (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6">
-          {[1, 2, 3, 4].map((i) => (
+          {Array.from({ length: 12 }).map((_, i) => (
             <div
               key={i}
               className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 animate-pulse"
@@ -394,124 +434,148 @@ function Products({
       )}
 
       {!loading && !error && filteredProducts.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6">
-          {filteredProducts.map((product) => {
-            const hasOffer = Boolean(
-              product.promo_price && Number(product.promo_price) > 0
-            );
+        <>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6">
+            {filteredProducts.map((product) => {
+              const hasOffer = Boolean(
+                product.promo_price && Number(product.promo_price) > 0
+              );
 
-            // Priorité : 1. Backend s'il existe, 2. HashMap récupérée, 3. Défaut (0)
-            const ratingData = ratingsMap[product.id];
-            const productRating = product.average_rating ?? product.rating ?? ratingData?.rating ?? 0;
-            const reviewsCount = product.total_reviews ?? product.reviews_count ?? ratingData?.count ?? 0;
+              const ratingData = ratingsMap[product.id];
+              const productRating = product.average_rating ?? product.rating ?? ratingData?.rating ?? 0;
+              const reviewsCount = product.total_reviews ?? product.reviews_count ?? ratingData?.count ?? 0;
 
-            return (
-              <div
-                key={product.id}
-                className="group relative bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between overflow-hidden hover:-translate-y-1"
-              >
-                <a href={`/details?id=${product.id}`} className="block relative">
-                  <div className="relative overflow-hidden h-44 sm:h-64 bg-slate-50">
-                    <img
-                      src={getSingleImageUrl(product)}
-                      alt={product.title}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src =
-                          "https://images.unsplash.com/photo-1546868871-7041f2a55e12?auto=format&fit=crop&w=600&q=80";
-                      }}
-                    />
+              return (
+                <div
+                  key={product.id}
+                  className="group relative bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between overflow-hidden hover:-translate-y-1"
+                >
+                  <a href={`/details?id=${product.id}`} className="block relative">
+                    <div className="relative overflow-hidden h-44 sm:h-64 bg-slate-50">
+                      <img
+                        src={getSingleImageUrl(product)}
+                        alt={product.title}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src =
+                            "https://images.unsplash.com/photo-1546868871-7041f2a55e12?auto=format&fit=crop&w=600&q=80";
+                        }}
+                      />
 
-                    {hasOffer && (
-                      <span className="absolute top-2 left-2 bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow">
-                        PROMO
-                      </span>
-                    )}
+                      {hasOffer && (
+                        <span className="absolute top-2 left-2 bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow">
+                          PROMO
+                        </span>
+                      )}
 
-                    <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-end p-3 gap-2">
-                      <button
-                        type="button"
-                        onClick={(e) => handleAddToCart(e, product.id)}
-                        disabled={addingId === product.id}
-                        className="w-full bg-white text-slate-900 hover:bg-slate-100 py-2 rounded-lg font-semibold text-xs shadow transition-all flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-4 w-4"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
+                      <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-end p-3 gap-2">
+                        <button
+                          type="button"
+                          onClick={(e) => handleAddToCart(e, product.id)}
+                          disabled={addingId === product.id}
+                          className="w-full bg-white text-slate-900 hover:bg-slate-100 py-2 rounded-lg font-semibold text-xs shadow transition-all flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer"
                         >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z"
-                          />
-                        </svg>
-                        {addingId === product.id ? "Ajout..." : "Panier"}
-                      </button>
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-4 w-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z"
+                            />
+                          </svg>
+                          {addingId === product.id ? "Ajout..." : "Panier"}
+                        </button>
 
-                      <button
-                        type="button"
-                        onClick={(e) => handleDirectBuy(e, product)}
-                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg font-semibold text-xs shadow transition-all flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer"
-                      >
-                        Acheter
-                      </button>
+                        <button
+                          type="button"
+                          onClick={(e) => handleDirectBuy(e, product)}
+                          className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg font-semibold text-xs shadow transition-all flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer"
+                        >
+                          Acheter
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                </a>
+                  </a>
 
-                <div className="p-4 flex flex-col justify-between flex-grow">
-                  <div>
-                    <a href={`/details?id=${product.id}`}>
-                      <h3 className=" text-black text-lg sm:text-base text-center line-clamp-1 hover:text-indigo-600 transition-colors">
-                        {product.title}
-                      </h3>
-                    </a>
-                    {/* <p className="text-gray-400 text-xs mt-1 line-clamp-2">
-                      {product.description || "Aucune description disponible."}
-                    </p> */}
-                  </div>
-
-                  <div className="mt-4 pt-2 border-t border-gray-50 flex items-center justify-between">
+                  <div className="p-4 flex flex-col justify-between flex-grow">
                     <div>
-                      {hasOffer ? (
-                        <div className="flex flex-col">
+                      <a href={`/details?id=${product.id}`}>
+                        <h3 className=" text-black font-semibold text-lg sm:text-base text-center line-clamp-1 hover:text-indigo-600 transition-colors">
+                          {product.title}
+                        </h3>
+                      </a>
+                    </div>
+
+                    <div className="mt-4 pt-2 border-t border-gray-50 flex items-center justify-between">
+                      <div>
+                        {hasOffer ? (
+                          <div className="flex flex-col">
+                            <span className="font-extrabold text-indigo-600 text-xs sm:text-sm">
+                              {Number(product.promo_price).toLocaleString()} FCFA
+                            </span>
+                            <span className="text-[10px] text-gray-400 line-through">
+                              {Number(product.price).toLocaleString()} FCFA
+                            </span>
+                          </div>
+                        ) : (
                           <span className="font-extrabold text-indigo-600 text-xs sm:text-sm">
-                            {Number(product.promo_price).toLocaleString()} FCFA
-                          </span>
-                          <span className="text-[10px] text-gray-400 line-through">
                             {Number(product.price).toLocaleString()} FCFA
                           </span>
-                        </div>
-                      ) : (
-                        <span className="font-extrabold text-indigo-600 text-xs sm:text-sm">
-                          {Number(product.price).toLocaleString()} FCFA
-                        </span>
-                      )}
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-1">
+                        {renderStars(productRating)}
+                        {reviewsCount > 0 && (
+                          <span className="text-[10px] text-gray-400 font-medium">
+                            ({reviewsCount})
+                          </span>
+                        )}
+                      </div>
                     </div>
 
-                    {/* Affichage des Étoiles Dynamiques */}
-                    <div className="flex items-center gap-1">
-                      {renderStars(productRating)}
-                      {reviewsCount > 0 && (
-                        <span className="text-[10px] text-gray-400 font-medium">
-                          ({reviewsCount})
-                        </span>
-                      )}
-                    </div>
+                    <span className="text-gray-400 text-[10px] sm:text-xs text-center mt-1">
+                      ({product.stock || 0}) Articles seulement restants
+                    </span>
                   </div>
-
-                  <span className="text-gray-400 text-[10px] sm:text-xs text-center mt-1">
-                    ({product.stock || 0}) Articles seulement restants
-                  </span>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+
+          {/* Bouton "Charger plus" en bas de page */}
+          {hasMore && (
+            <div className="flex flex-col items-center justify-center mt-12 gap-2">
+              <button
+                type="button"
+                onClick={handleLoadMore}
+                disabled={loadingMore}
+                className="bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-extrabold text-sm px-8 py-3.5 rounded-xl shadow-lg hover:shadow-indigo-500/25 transition-all flex items-center gap-3 disabled:opacity-60 cursor-pointer"
+              >
+                {loadingMore ? (
+                  <>
+                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span>Chargement des produits suivants...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Voir plus de produits</span>
+                  </>
+                )}
+              </button>
+              
+            </div>
+          )}
+        </>
       )}
     </div>
   );

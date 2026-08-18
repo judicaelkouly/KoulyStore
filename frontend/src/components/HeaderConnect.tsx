@@ -183,26 +183,12 @@ function HeaderConnect({ onLogout }: HeaderProps) {
         
         {/* LOGO (Clique sur Mobile = Ouvre le Menu | Clique sur Desktop = Accueil) */}
         <div className="flex items-center">
-          <button
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="md:hidden flex items-center gap-2 text-left focus:outline-none"
-            aria-label="Ouvrir le menu mobile"
-          >
-            <div className="w-10 h-10 bg-indigo-600 text-white rounded-xl flex items-center justify-center font-black text-xl shadow-md">
-              K
-            </div>
-            <span className="text-xl font-black text-slate-900 tracking-tight">
-              Kouly<span className="text-indigo-600">'Store</span>
-            </span>
-          </button>
-
-          <a href="/" className="hidden md:flex items-center gap-2 group">
-            <div className="w-10 h-10 bg-indigo-600 text-white rounded-xl flex items-center justify-center font-black text-xl shadow-md group-hover:bg-indigo-700 transition-colors">
-              K
-            </div>
-            <span className="text-2xl font-black text-slate-900 tracking-tight">
-              Kouly<span className="text-indigo-600">'Store</span>
-            </span>
+         <a href="/" className="flex items-center gap-3 group">
+            <img 
+              src="/src/assets/logo3.png" 
+              alt="Kouly'Store Logo" 
+              className="h-10 sm:h-20 w-auto object-contain transition-transform group-hover:scale-105"
+            />
           </a>
         </div>
 

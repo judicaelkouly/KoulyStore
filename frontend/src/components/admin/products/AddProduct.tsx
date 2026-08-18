@@ -23,6 +23,13 @@ function AddProduct() {
   const defaultSizesMap: Record<string, string[]> = {
     Vêtements: ["S", "M", "L", "XL", "XXL"],
     Chaussures: ["38", "39", "40", "41", "42", "43", "44"],
+    Mode_Hommes_Chaussures: ["38", "39", "40", "41", "42", "43", "44"],
+    Mode_Hommes_Vêtements: ["S", "M", "L", "XL", "XXL", "3XL", "4XL"],
+    Mode_Enfants_Chaussures: ["25", "26", "27", "28", "29", "30", "31","32","33","34","35","36","37",],
+    Mode_Enfants_Vêtements: ["XXS", "XS", "L", "S"],
+    Mode_Femmes_Chaussures: ["38", "39", "40", "41", "42", "43", "44"],
+    Mode_Femmes_Vêtements: ["S", "M", "L", "XL", "XXL", "3XL", "4XL"],
+    
   };
 
   // États pour l'API et les catégories
