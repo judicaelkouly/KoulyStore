@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
+// URL de base de l'API (ex: https://ton-back.onrender.com/api ou http://localhost:8000/api)
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
+
 // 1. Interface OrderItem incluant la taille
 export interface OrderItem {
   id: number | string;
@@ -70,7 +73,7 @@ function Payment() {
     const checkUserAuth = async () => {
       try {
         const xsrfToken = getXsrfToken();
-        const response = await fetch("http://localhost:8000/api/user", {
+        const response = await fetch(`${API_BASE_URL}/user`, {
           method: "GET",
           headers: {
             Accept: "application/json",
@@ -147,7 +150,7 @@ function Payment() {
 
     try {
       const xsrfToken = getXsrfToken();
-      const response = await fetch("http://localhost:8000/api/orders", {
+      const response = await fetch(`${API_BASE_URL}/orders`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

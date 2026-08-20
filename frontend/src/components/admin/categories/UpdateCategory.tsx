@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 
+// Configuration dynamique des URL d'API et de stockage
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
+const STORAGE_BASE_URL = API_BASE_URL.replace(/\/api\/?$/, "");
+
 interface ValidationError {
   [key: string]: string[];
 }
@@ -26,14 +30,50 @@ function UpdateCategory() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<ValidationError>({});
 
+  // Helper pour récupérer le token XSRF des cookies (Laravel Sanctum)
+  const getXsrfToken = () => {
+    const cookies = document.cookie.split(";");
+    for (let cookie of cookies) {
+      const [name, value] = cookie.trim().split("=");
+      if (name === "XSRF-TOKEN") {
+        return decodeURIComponent(value);
+      }
+    }
+    return "";
+  };
+
+  const getAuthHeaders = () => {
+    const xsrfToken = getXsrfToken();
+    return {
+      Accept: "application/json",
+      ...(xsrfToken ? { "X-XSRF-TOKEN": xsrfToken } : {}),
+    };
+  };
+
+  // Helper pour formater l'URL de l'image
+  const formatImageUrl = (pathCandidate?: string | null): string | null => {
+    if (!pathCandidate) return null;
+    if (
+      pathCandidate.startsWith("http://") ||
+      pathCandidate.startsWith("https://") ||
+      pathCandidate.startsWith("blob:") ||
+      pathCandidate.startsWith("data:")
+    ) {
+      return pathCandidate;
+    }
+    const cleanPath = pathCandidate.replace(/^\//, "");
+    if (cleanPath.startsWith("storage/")) {
+      return `${STORAGE_BASE_URL}/${cleanPath}`;
+    }
+    return `${STORAGE_BASE_URL}/storage/${cleanPath}`;
+  };
+
   // 1. CHERCHER LA CATÉGORIE EN BDD AU CHARGEMENT
   useEffect(() => {
     const fetchCategory = async () => {
       try {
-        const response = await fetch(`http://localhost:8000/api/categories/${id}`, {
-          headers: {
-            Accept: "application/json",
-          },
+        const response = await fetch(`${API_BASE_URL}/categories/${id}`, {
+          headers: getAuthHeaders(),
           credentials: "include",
         });
 
@@ -50,11 +90,9 @@ function UpdateCategory() {
         setHasSizes(Boolean(category.has_sizes));
 
         // Formatage de l'image d'illustration existante
-        if (category.image) {
-          const fullImageUrl = category.image.startsWith("http")
-            ? category.image
-            : `http://localhost:8000/storage/${category.image}`;
-          setImagePreview(fullImageUrl);
+        if (category.image || category.image_url) {
+          const rawImage = category.image_url || category.image;
+          setImagePreview(formatImageUrl(rawImage));
         }
 
         // Détection et injection des tailles
@@ -118,7 +156,8 @@ function UpdateCategory() {
 
     // Création du FormData
     const formData = new FormData();
-    // 🔑 ASTUCE LARAVEL : Method Spoofing pour autoriser les fichiers avec la logique PUT
+    // 🔑 Method Spoofing Laravel pour autoriser l'envoi de fichiers multipart/form-data via PUT
+    formData.append("_method", "PUT");
     formData.append("name", categoryName);
     formData.append("has_sizes", hasSizes ? "1" : "0");
 
@@ -133,11 +172,9 @@ function UpdateCategory() {
     }
 
     try {
-      const response = await fetch(`http://localhost:8000/api/admin/categories/${id}`, {
-        method: "POST", // On utilise POST avec _method: "PUT" dans FormData
-        headers: {
-          Accept: "application/json",
-        },
+      const response = await fetch(`${API_BASE_URL}/admin/categories/${id}`, {
+        method: "POST", // Method Spoofing Laravel : POST avec _method = PUT
+        headers: getAuthHeaders(),
         credentials: "include",
         body: formData,
       });
@@ -156,7 +193,7 @@ function UpdateCategory() {
 
       setSuccessMessage("La catégorie a été modifiée avec succès !");
 
-      // Redirection automatique vers la liste après 1.5s
+      // Redirection automatique vers le tableau de bord après 1.5s
       setTimeout(() => {
         navigate("/admin/dashboard");
       }, 1500);
@@ -284,7 +321,6 @@ function UpdateCategory() {
                 accept="image/*"
                 onChange={handleImageChange}
                 className="hidden"
-                /* Image facultative lors de l'édition */
               />
             </label>
           )}

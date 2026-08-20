@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { FaPlus, FaTrash, FaEye, FaEyeSlash, FaUpload } from "react-icons/fa";
 
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
 export interface Banner {
   id: number;
   title: string;
@@ -46,7 +48,7 @@ function BannerList() {
       const headers: Record<string, string> = { Accept: "application/json" };
       if (xsrfToken) headers["X-XSRF-TOKEN"] = xsrfToken;
 
-      const response = await fetch("http://localhost:8000/api/admin/banners", {
+      const response = await fetch(`${API_BASE_URL}/admin/banners`, {
         headers,
         credentials: "include",
       });
@@ -102,7 +104,7 @@ function BannerList() {
       };
       if (xsrfToken) headers["X-XSRF-TOKEN"] = xsrfToken;
 
-      const response = await fetch("http://localhost:8000/api/admin/banners", {
+      const response = await fetch(`${API_BASE_URL}/admin/banners`, {
         method: "POST",
         headers,
         credentials: "include",
@@ -132,7 +134,7 @@ function BannerList() {
       };
       if (xsrfToken) headers["X-XSRF-TOKEN"] = xsrfToken;
 
-      await fetch(`http://localhost:8000/api/admin/banners/${banner.id}`, {
+      await fetch(`${API_BASE_URL}/admin/banners/${banner.id}`, {
         method: "POST",
         headers,
         credentials: "include",
@@ -153,7 +155,7 @@ function BannerList() {
       const headers: Record<string, string> = { Accept: "application/json" };
       if (xsrfToken) headers["X-XSRF-TOKEN"] = xsrfToken;
 
-      await fetch(`http://localhost:8000/api/admin/banners/${id}`, {
+      await fetch(`${API_BASE_URL}/admin/banners/${id}`, {
         method: "DELETE",
         headers,
         credentials: "include",

@@ -1,5 +1,5 @@
 import  { useState, useEffect } from "react";
-
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
 // 1. Interface pour l'utilisateur
 export interface User {
   id: number | string;
@@ -46,7 +46,7 @@ function UserList() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch("http://localhost:8000/api/users", {
+      const response = await fetch(`${API_BASE_URL}/users`, {
         method: "GET",
         headers: getAuthHeaders(),
         credentials: "include",
@@ -88,7 +88,7 @@ function UserList() {
 
     setDeletingId(userId);
     try {
-      const response = await fetch(`http://localhost:8000/api/users/${userId}`, {
+      const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
         method: "DELETE",
         headers: getAuthHeaders(),
         credentials: "include",

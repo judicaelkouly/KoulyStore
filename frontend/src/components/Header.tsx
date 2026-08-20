@@ -10,6 +10,9 @@ import {
   MdPersonAdd
 } from "react-icons/md";
 
+// URL de base de l'API (ex: https://ton-back.onrender.com/api ou http://localhost:8000/api)
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
+
 export interface SearchProduct {
   id: string | number;
   name: string;
@@ -64,7 +67,7 @@ function Header() {
   useEffect(() => {
     const fetchCartData = async () => {
       try {
-        const resCart = await fetch("http://localhost:8000/api/cart", {
+        const resCart = await fetch(`${API_BASE_URL}/cart`, {
           method: "GET",
           headers: getAuthHeaders(),
           credentials: "include",
@@ -103,7 +106,7 @@ function Header() {
     const delayDebounceFn = setTimeout(async () => {
       setIsSearching(true);
       try {
-        const res = await fetch(`http://localhost:8000/api/products?search=${encodeURIComponent(searchQuery)}`, {
+        const res = await fetch(`${API_BASE_URL}/products?search=${encodeURIComponent(searchQuery)}`, {
           headers: getAuthHeaders(),
         });
         if (res.ok) {

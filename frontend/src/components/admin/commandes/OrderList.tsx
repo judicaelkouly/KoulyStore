@@ -1,5 +1,9 @@
 import { useState, useEffect } from "react";
 
+// Configuration dynamique des URL d'API et de stockage
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
+const STORAGE_BASE_URL = API_BASE_URL.replace(/\/api\/?$/, "");
+
 // Interfaces TypeScript mises à jour avec la structure product & images
 export interface User {
   id: number;
@@ -85,10 +89,10 @@ function OrderList() {
     const cleanPath = target.replace(/^\//, "");
 
     if (cleanPath.startsWith("storage/")) {
-      return `http://localhost:8000/${cleanPath}`;
+      return `${STORAGE_BASE_URL}/${cleanPath}`;
     }
 
-    return `http://localhost:8000/storage/${cleanPath}`;
+    return `${STORAGE_BASE_URL}/storage/${cleanPath}`;
   };
 
   // Récupère l'image du produit liée à l'item de commande
@@ -146,7 +150,7 @@ function OrderList() {
           headers["X-XSRF-TOKEN"] = xsrfToken;
         }
 
-        const response = await fetch("http://localhost:8000/api/admin/orders", {
+        const response = await fetch(`${API_BASE_URL}/admin/orders`, {
           method: "GET",
           headers,
           credentials: "include",

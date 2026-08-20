@@ -6,6 +6,11 @@ import {
   HiEyeSlash 
 } from 'react-icons/hi2';
 
+// URL de base de l'API (ex: https://ton-back.onrender.com/api ou http://localhost:8000/api)
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
+// URL racine pour Sanctum (ex: https://ton-back.onrender.com ou http://localhost:8000)
+const SANCTUM_BASE_URL = API_BASE_URL.replace(/\/api\/?$/, "");
+
 interface ValidationErrors {
   general?: string;
   email?: string[];
@@ -34,12 +39,12 @@ function Login() {
     setSuccessMessage('');
 
     try {
-      await fetch('http://localhost:8000/sanctum/csrf-cookie', {
+      await fetch(`${SANCTUM_BASE_URL}/sanctum/csrf-cookie`, {
         method: 'GET',
         credentials: 'include',
       });
 
-      const response = await fetch('http://localhost:8000/api/login', {
+      const response = await fetch(`${API_BASE_URL}/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -103,13 +108,13 @@ function Login() {
               
               {/* MESSAGES D'ALERTE */}
               {errors.general && (
-                <div className="mb-3 p-2.5 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/40 text-red-600 dark:text-red-400 text-xs text-center font-medium">
+                <div className="mb-3 p-2.5  text-red-600 dark:text-red-400 text-xs text-center font-medium">
                   {errors.general}
                 </div>
               )}
 
               {successMessage && (
-                <div className="mb-3 p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/40 text-emerald-600 dark:text-emerald-400 text-xs text-center font-medium">
+                <div className="mb-3 p-2.5 text-emerald-600 dark:text-emerald-400 text-xs text-center font-medium">
                   {successMessage}
                 </div>
               )}

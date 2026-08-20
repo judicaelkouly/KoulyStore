@@ -2,6 +2,10 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaStar, FaRegStar } from "react-icons/fa6";
 
+// URL de base dynamique pour l'API
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
+const STORAGE_BASE_URL = API_BASE_URL.replace(/\/api\/?$/, "");
+
 // 1. Interfaces TypeScript pour les produits et catégories
 export interface Category {
   id: number | string;
@@ -81,7 +85,7 @@ function Products({
   const checkAuth = async (): Promise<boolean> => {
     try {
       const xsrfToken = getXsrfToken();
-      const response = await fetch("http://localhost:8000/api/user", {
+      const response = await fetch(`${API_BASE_URL}/user`, {
         method: "GET",
         headers: {
           Accept: "application/json",
@@ -126,7 +130,7 @@ function Products({
       }
 
       const response = await fetch(
-        `http://localhost:8000/api/products?${params.toString()}`,
+        `${API_BASE_URL}/products?${params.toString()}`,
         {
           headers: {
             Accept: "application/json",
@@ -190,7 +194,7 @@ function Products({
       if (product.average_rating !== undefined || product.rating !== undefined) return;
 
       try {
-        const res = await fetch(`http://localhost:8000/api/products/${product.id}/reviews`, {
+        const res = await fetch(`${API_BASE_URL}/products/${product.id}/reviews`, {
           headers: { Accept: "application/json" },
         });
         if (res.ok) {
@@ -275,7 +279,7 @@ function Products({
       if (imgPath.startsWith("http://") || imgPath.startsWith("https://")) {
         return imgPath;
       }
-      return `http://localhost:8000/storage/${imgPath.replace(/^\//, "")}`;
+      return `${STORAGE_BASE_URL}/storage/${imgPath.replace(/^\//, "")}`;
     }
 
     return "https://images.unsplash.com/photo-1546868871-7041f2a55e12?auto=format&fit=crop&w=600&q=80";
@@ -303,7 +307,7 @@ function Products({
       }
 
       const xsrfToken = getXsrfToken();
-      const response = await fetch("http://localhost:8000/api/cart", {
+      const response = await fetch(`${API_BASE_URL}/cart`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -506,7 +510,7 @@ function Products({
                   <div className="p-4 flex flex-col justify-between flex-grow">
                     <div>
                       <a href={`/details?id=${product.id}`}>
-                        <h3 className=" text-black font-semibold text-lg sm:text-base text-center line-clamp-1 hover:text-indigo-600 transition-colors">
+                        <h3 className=" text-black font-semibold text-lg sm:text-base line-clamp-1 hover:text-indigo-600 transition-colors">
                           {product.title}
                         </h3>
                       </a>

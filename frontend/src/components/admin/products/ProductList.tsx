@@ -1,5 +1,9 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+
+// Configuration dynamique des URL d'API et de stockage
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
+const STORAGE_BASE_URL = API_BASE_URL.replace(/\/api\/?$/, "");
 
 // 1. Types TypeScript pour les produits (avec l'attribut is_active)
 export interface Product {
@@ -24,15 +28,33 @@ function ProductList() {
   const [deletingId, setDeletingId] = useState<number | string | null>(null);
   const [togglingId, setTogglingId] = useState<number | string | null>(null); // Loader pour le switch
 
+  // Helper pour récupérer le token XSRF des cookies (Laravel Sanctum)
+  const getXsrfToken = () => {
+    const cookies = document.cookie.split(";");
+    for (let cookie of cookies) {
+      const [name, value] = cookie.trim().split("=");
+      if (name === "XSRF-TOKEN") {
+        return decodeURIComponent(value);
+      }
+    }
+    return "";
+  };
+
+  const getAuthHeaders = () => {
+    const xsrfToken = getXsrfToken();
+    return {
+      Accept: "application/json",
+      ...(xsrfToken ? { "X-XSRF-TOKEN": xsrfToken } : {}),
+    };
+  };
+
   // 📥 1. Récupération des produits depuis l'API Laravel
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const response = await fetch("http://localhost:8000/api/admin/products", {
+      const response = await fetch(`${API_BASE_URL}/admin/products`, {
         credentials: "include", 
-        headers: {
-          Accept: "application/json",
-        },
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -62,11 +84,11 @@ function ProductList() {
     setTogglingId(id);
 
     try {
-      const response = await fetch(`http://localhost:8000/api/admin/products/${id}/toggle-status`, {
+      const response = await fetch(`${API_BASE_URL}/admin/products/${id}/toggle-status`, {
         method: "PATCH",
         credentials: "include", // Transmet les cookies de session Admin
         headers: {
-          "Accept": "application/json",
+          ...getAuthHeaders(),
           "Content-Type": "application/json",
         },
       });
@@ -100,11 +122,11 @@ function ProductList() {
     setDeletingId(id);
 
     try {
-      const response = await fetch(`http://localhost:8000/api/admin/products/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/admin/products/${id}`, {
         method: "DELETE",
         credentials: "include",
         headers: {
-          "Accept": "application/json",
+          ...getAuthHeaders(),
           "Content-Type": "application/json",
         },
       });
@@ -137,21 +159,29 @@ function ProductList() {
       }
     }
 
+    const formatUrl = (path: string) => {
+      if (path.startsWith("http://") || path.startsWith("https://")) {
+        return path;
+      }
+      const cleanPath = path.replace(/^\//, "");
+      return cleanPath.startsWith("storage/")
+        ? `${STORAGE_BASE_URL}/${cleanPath}`
+        : `${STORAGE_BASE_URL}/storage/${cleanPath}`;
+    };
+
     if (Array.isArray(rawImgs) && rawImgs.length > 0) {
       const first = rawImgs[0];
       if (typeof first === "string") {
-        return first.startsWith("http") ? first : `http://localhost:8000/storage/${first.replace(/^\//, "")}`;
+        return formatUrl(first);
       }
       if (typeof first === "object" && first !== null) {
         const url = first.url || first.path || first.image_path || "";
-        return url.startsWith("http") ? url : `http://localhost:8000/storage/${url.replace(/^\//, "")}`;
+        return formatUrl(url);
       }
     }
 
     if (typeof rawImgs === "string" && rawImgs.trim() !== "") {
-      return rawImgs.startsWith("http")
-        ? rawImgs
-        : `http://localhost:8000/storage/${rawImgs.replace(/^\//, "")}`;
+      return formatUrl(rawImgs);
     }
 
     return "https://images.unsplash.com/photo-1546868871-7041f2a55e12?auto=format&fit=crop&w=100&q=80";
@@ -192,7 +222,7 @@ function ProductList() {
                 <th className="py-3 px-6 text-left">Catégorie</th>
                 <th className="py-3 px-6 text-left">Prix</th>
                 <th className="py-3 px-6 text-left">Stock</th>
-                <th className="py-3 px-6 text-center">Statut (Admin)</th> {/* 👈 Nouvelle colonne */}
+                <th className="py-3 px-6 text-center">Statut (Admin)</th>
                 <th className="py-3 px-6 text-center">Actions</th>
               </tr>
             </thead>

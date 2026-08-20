@@ -8,6 +8,9 @@ import {
   HiEyeSlash 
 } from 'react-icons/hi2';
 
+// URL de base de l'API (ex: https://ton-back.onrender.com/api ou http://localhost:8000/api)
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
+
 interface ValidationErrors {
   general?: string;
   username?: string[];
@@ -53,7 +56,7 @@ function Register() {
     setSuccessMessage('');
 
     try {
-      const response = await fetch('http://localhost:8000/api/register', {
+      const response = await fetch(`${API_BASE_URL}/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -101,17 +104,15 @@ function Register() {
         <div className="w-full lg:w-1/2 p-6 sm:p-10 flex flex-col justify-center">
           
           {/* LOGO */}
-          
-            <div className="flex items-center justify-center">
-         <a href="/" className="flex items-center gap-3 group">
-            <img 
-              src="/src/assets/logo3.png" 
-              alt="Kouly'Store Logo" 
-              className="h-10 sm:h-20 w-auto object-contain transition-transform group-hover:scale-105"
-            />
-          </a>
-        </div>
-        
+          <div className="flex items-center justify-center">
+            <a href="/" className="flex items-center gap-3 group">
+              <img 
+                src="/src/assets/logo3.png" 
+                alt="Kouly'Store Logo" 
+                className="h-10 sm:h-20 w-auto object-contain transition-transform group-hover:scale-105"
+              />
+            </a>
+          </div>
 
           <div className="mt-6 flex flex-col items-center">
             <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight text-center">
@@ -289,7 +290,7 @@ function Register() {
           <img 
             src="/src/assets/hero3.png" 
             alt="Shopping Expérience Kouly'Store" 
-            className="w-full h-full object-cove opacity-90"
+            className="w-full h-full object-cover opacity-90"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent flex flex-col justify-end p-8">
             <h2 className="text-2xl font-black text-white tracking-tight">

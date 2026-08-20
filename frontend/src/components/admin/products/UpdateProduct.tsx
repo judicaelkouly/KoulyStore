@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 
+// Configuration dynamique des URL d'API et de stockage
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
+const STORAGE_BASE_URL = API_BASE_URL.replace(/\/api\/?$/, "");
+
 // Interfaces TypeScript
 export interface Category {
   id: number | string;
@@ -56,12 +60,33 @@ function UpdateProduct({ productToEdit, onCancel, onSuccess }: UpdateProductProp
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Helper pour récupérer le token XSRF des cookies (Laravel Sanctum)
+  const getXsrfToken = () => {
+    const cookies = document.cookie.split(";");
+    for (let cookie of cookies) {
+      const [name, value] = cookie.trim().split("=");
+      if (name === "XSRF-TOKEN") {
+        return decodeURIComponent(value);
+      }
+    }
+    return "";
+  };
+
+  const getAuthHeaders = () => {
+    const xsrfToken = getXsrfToken();
+    return {
+      Accept: "application/json",
+      ...(xsrfToken ? { "X-XSRF-TOKEN": xsrfToken } : {}),
+    };
+  };
+
   // 1. Récupération des catégories depuis l'API Laravel
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await fetch("http://localhost:8000/api/categories", {
-          headers: { Accept: "application/json" },
+        const response = await fetch(`${API_BASE_URL}/categories`, {
+          credentials: "include",
+          headers: getAuthHeaders(),
         });
         if (response.ok) {
           const data = await response.json();
@@ -110,10 +135,15 @@ function UpdateProduct({ productToEdit, onCancel, onSuccess }: UpdateProductProp
       const initialImages: (string | null)[] = [null, null, null, null, null];
       product.images.forEach((img: any, idx: number) => {
         if (idx < 5) {
-          const url = typeof img === "string" ? img : img.url || img.image_path;
-          initialImages[idx] = url.startsWith("http")
-            ? url
-            : `http://localhost:8000/storage/${url.replace(/^\//, "")}`;
+          const url = typeof img === "string" ? img : img.url || img.image_path || img.path || "";
+          if (url.startsWith("http://") || url.startsWith("https://")) {
+            initialImages[idx] = url;
+          } else {
+            const cleanPath = url.replace(/^\//, "");
+            initialImages[idx] = cleanPath.startsWith("storage/")
+              ? `${STORAGE_BASE_URL}/${cleanPath}`
+              : `${STORAGE_BASE_URL}/storage/${cleanPath}`;
+          }
         }
       });
       setImages(initialImages);
@@ -129,8 +159,9 @@ function UpdateProduct({ productToEdit, onCancel, onSuccess }: UpdateProductProp
       const fetchProduct = async () => {
         try {
           setLoading(true);
-          const response = await fetch(`http://localhost:8000/api/products/${productId}`, {
-            headers: { Accept: "application/json" },
+          const response = await fetch(`${API_BASE_URL}/admin/products/${productId}`, {
+            credentials: "include",
+            headers: getAuthHeaders(),
           });
 
           if (!response.ok) {
@@ -212,70 +243,66 @@ function UpdateProduct({ productToEdit, onCancel, onSuccess }: UpdateProductProp
     }
   };
 
-  //  Soumission du formulaire de mise à jour à l'API Laravel
- const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  if (!productId) return;
+  // 3. Soumission du formulaire de mise à jour à l'API Laravel
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!productId) return;
 
-  setSubmitting(true);
-  setError(null);
+    setSubmitting(true);
+    setError(null);
 
-  try {
-    const bodyFormData = new FormData();
+    try {
+      const bodyFormData = new FormData();
 
-    // Trick Laravel pour supporter multipart/form-data lors des mises à jour
+      // Astuce Laravel pour les formulaires multipart/form-data en modification
+      //bodyFormData.append("_method", "PUT");
 
-    bodyFormData.append("title", formData.title);
-    bodyFormData.append("description", formData.description);
-    bodyFormData.append("category_id", formData.category_id);
-    bodyFormData.append("price", formData.price);
-    if (formData.promo_price) {
-      bodyFormData.append("promo_price", formData.promo_price);
-    }
-    bodyFormData.append("stock", formData.stock);
-
-    if (selectedSizes.length > 0) {
-      bodyFormData.append("sizes", JSON.stringify(selectedSizes));
-    }
-
-    images.forEach((img) => {
-      if (img instanceof File) {
-        bodyFormData.append("images[]", img);
+      bodyFormData.append("title", formData.title);
+      bodyFormData.append("description", formData.description);
+      bodyFormData.append("category_id", formData.category_id);
+      bodyFormData.append("price", formData.price);
+      if (formData.promo_price) {
+        bodyFormData.append("promo_price", formData.promo_price);
       }
-    });
+      bodyFormData.append("stock", formData.stock);
 
+      if (selectedSizes.length > 0) {
+        bodyFormData.append("sizes", JSON.stringify(selectedSizes));
+      }
 
-   const response = await fetch(`http://localhost:8000/api/admin/products/${productId}`, {
-  method: "POST",
-  credentials: "include", 
-  headers: {
-    Accept: "application/json",
-  },
-  body: bodyFormData,
-});
+      images.forEach((img) => {
+        if (img instanceof File) {
+          bodyFormData.append("images[]", img);
+        }
+      });
 
+      const response = await fetch(`${API_BASE_URL}/admin/products/${productId}`, {
+        method: "POST", // Method POST avec _method PUT pour supporter multipart/form-data dans Laravel
+        credentials: "include",
+        headers: getAuthHeaders(),
+        body: bodyFormData,
+      });
 
-    const data = await response.json();
+      const data = await response.json();
 
-    if (!response.ok) {
-      throw new Error(data.message || "Erreur lors de la mise à jour du produit.");
+      if (!response.ok) {
+        throw new Error(data.message || "Erreur lors de la mise à jour du produit.");
+      }
+
+      alert("Produit mis à jour avec succès !");
+
+      if (onSuccess) {
+        onSuccess(data.product || data);
+      } else {
+        navigate("/admin/dashboard");
+      }
+    } catch (err: any) {
+      console.error("Erreur update:", err);
+      setError(err.message || "Une erreur est survenue.");
+    } finally {
+      setSubmitting(false);
     }
-
-    alert("Produit mis à jour avec succès !");
-
-    if (onSuccess) {
-      onSuccess(data.product || data);
-    } else {
-      navigate("/admin/dashboard");
-    }
-  } catch (err: any) {
-    console.error("Erreur update:", err);
-    setError(err.message || "Une erreur est survenue.");
-  } finally {
-    setSubmitting(false);
-  }
-};
-
+  };
 
   if (loading) {
     return (
@@ -304,7 +331,7 @@ function UpdateProduct({ productToEdit, onCancel, onSuccess }: UpdateProductProp
           {(onCancel || routeId) && (
             <button
               type="button"
-              onClick={onCancel || (() => navigate("/admin/products"))}
+              onClick={onCancel || (() => navigate("/admin/dashboard"))}
               className="text-gray-400 hover:text-gray-600 transition-colors"
             >
               <i className="fas fa-times text-lg"></i>

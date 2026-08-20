@@ -3,6 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { FaMoneyBillTransfer, FaStar, FaRegStar } from "react-icons/fa6";
 import { FaCheckCircle } from "react-icons/fa";
 
+// URL de base de l'API (ex: https://ton-back.onrender.com/api ou http://localhost:8000/api)
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
+// URL hôte pour les images (ex: https://ton-back.onrender.com)
+const API_HOST_URL = API_BASE_URL.replace(/\/api\/?$/, "");
+
 // Interfaces TypeScript
 export interface ProductDetail {
   id: number | string;
@@ -90,7 +95,7 @@ function Details() {
 
       try {
         // Fetch Produit
-        const response = await fetch(`http://localhost:8000/api/products/${productId}`, {
+        const response = await fetch(`${API_BASE_URL}/products/${productId}`, {
           headers: { Accept: "application/json" },
         });
 
@@ -114,18 +119,18 @@ function Details() {
         if (Array.isArray(rawImgs)) {
           parsedImages = rawImgs.map((img) => {
             if (typeof img === "string") {
-              return img.startsWith("http") ? img : `http://localhost:8000/storage/${img.replace(/^\//, "")}`;
+              return img.startsWith("http") ? img : `${API_HOST_URL}/storage/${img.replace(/^\//, "")}`;
             }
             if (typeof img === "object" && img !== null) {
               const path = img.url || img.path || img.image_path || "";
-              return path.startsWith("http") ? path : `http://localhost:8000/storage/${path.replace(/^\//, "")}`;
+              return path.startsWith("http") ? path : `${API_HOST_URL}/storage/${path.replace(/^\//, "")}`;
             }
             return "";
           }).filter(Boolean);
         } else if (typeof rawImgs === "string" && rawImgs.trim() !== "") {
           const imgUrl = rawImgs.startsWith("http")
             ? rawImgs
-            : `http://localhost:8000/storage/${rawImgs.replace(/^\//, "")}`;
+            : `${API_HOST_URL}/storage/${rawImgs.replace(/^\//, "")}`;
           parsedImages = [imgUrl];
         }
 
@@ -173,7 +178,7 @@ function Details() {
   // Fetch séparé pour les avis
   const fetchProductReviews = async (productId: string) => {
     try {
-      const res = await fetch(`http://localhost:8000/api/products/${productId}/reviews`, {
+      const res = await fetch(`${API_BASE_URL}/products/${productId}/reviews`, {
         headers: { Accept: "application/json" },
       });
       if (res.ok) {
@@ -239,7 +244,7 @@ function Details() {
 
     setAddingToCart(true);
     try {
-      const response = await fetch("http://localhost:8000/api/cart", {
+      const response = await fetch(`${API_BASE_URL}/cart`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -252,6 +257,15 @@ function Details() {
           size: selectedSize || null,
         }),
       });
+
+      // 🔒 Redirection automatique si non authentifié (401 / 403)
+      if (response.status === 401 || response.status === 403) {
+        showNotification("Veuillez vous connecter pour ajouter des articles au panier.");
+        setTimeout(() => {
+          navigate("/login");
+        }, 1200);
+        return;
+      }
 
       if (response.ok) {
         showNotification("Produit ajouté au panier avec succès !");

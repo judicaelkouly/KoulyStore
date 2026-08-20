@@ -14,6 +14,9 @@ import {
   FaCloudUploadAlt 
 } from "react-icons/fa";
 
+// URL de base de l'API (ex: https://ton-back.onrender.com/api ou http://localhost:8000/api)
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
+
 function ContactReturns() {
   const [formData, setFormData] = useState({
     orderNumber: "",
@@ -78,7 +81,7 @@ function ContactReturns() {
     if (xsrfToken) headers["X-XSRF-TOKEN"] = xsrfToken;
 
     try {
-      const response = await fetch("http://localhost:8000/api/returns", {
+      const response = await fetch(`${API_BASE_URL}/returns`, {
         method: "POST",
         headers,
         body: data,

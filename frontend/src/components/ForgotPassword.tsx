@@ -6,6 +6,9 @@ import {
   HiEyeSlash 
 } from "react-icons/hi2";
 
+// URL de base de l'API (ex: https://ton-back.onrender.com/api ou http://localhost:8000/api)
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
+
 type Step = "EMAIL" | "CODE" | "NEW_PASSWORD";
 
 export default function ForgotPassword() {
@@ -47,7 +50,7 @@ export default function ForgotPassword() {
     setLoading(true);
 
     try {
-      const response = await fetch("http://localhost:8000/api/auth/forgot-password", {
+      const response = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -81,7 +84,7 @@ export default function ForgotPassword() {
     setLoading(true);
 
     try {
-      const response = await fetch("http://localhost:8000/api/auth/verify-code", {
+      const response = await fetch(`${API_BASE_URL}/auth/verify-code`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -121,7 +124,7 @@ export default function ForgotPassword() {
     setLoading(true);
 
     try {
-      const response = await fetch("http://localhost:8000/api/auth/reset-password", {
+      const response = await fetch(`${API_BASE_URL}/auth/reset-password`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

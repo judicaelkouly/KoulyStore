@@ -1,12 +1,16 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+
+// Configuration dynamique des URL d'API et de stockage
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
+const STORAGE_BASE_URL = API_BASE_URL.replace(/\/api\/?$/, "");
 
 // Interface TypeScript pour typer une catégorie
 interface Category {
   id: number;
   name: string;
   image?: string;
-  image_url?: string; // Si ton API renvoie déjà l'URL complète
+  image_url?: string;
 }
 
 function CategoryList() {
@@ -14,16 +18,34 @@ function CategoryList() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Helper pour récupérer le token XSRF des cookies (Laravel Sanctum)
+  const getXsrfToken = () => {
+    const cookies = document.cookie.split(";");
+    for (let cookie of cookies) {
+      const [name, value] = cookie.trim().split("=");
+      if (name === "XSRF-TOKEN") {
+        return decodeURIComponent(value);
+      }
+    }
+    return "";
+  };
+
+  const getAuthHeaders = () => {
+    const xsrfToken = getXsrfToken();
+    return {
+      Accept: "application/json",
+      ...(xsrfToken ? { "X-XSRF-TOKEN": xsrfToken } : {}),
+    };
+  };
+
   // 1. Récupération des catégories depuis le Backend
   const fetchCategories = async () => {
     setLoading(true);
     setError(null);
 
     try {
-      const response = await fetch("http://localhost:8000/api/categories", {
-        headers: {
-          Accept: "application/json",
-        },
+      const response = await fetch(`${API_BASE_URL}/categories`, {
+        headers: getAuthHeaders(),
         credentials: "include",
       });
 
@@ -33,7 +55,6 @@ function CategoryList() {
         throw new Error(data.message || "Impossible de charger les catégories.");
       }
 
-      // Laravel renvoie soit directement le tableau, soit un objet { status: true, categories: [...] } ou { data: [...] }
       const categoryList = Array.isArray(data) ? data : data.categories || data.data || [];
       setCategories(categoryList);
     } catch (err: any) {
@@ -55,12 +76,10 @@ function CategoryList() {
     }
 
     try {
-      const response = await fetch(`http://localhost:8000/api/admin/categories/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/admin/categories/${id}`, {
         method: "DELETE",
-        headers: {
-          Accept: "application/json",
-        },
-        credentials: "include", // 🔑 Pour authentification Admin via Cookie
+        headers: getAuthHeaders(),
+        credentials: "include",
       });
 
       if (!response.ok) {
@@ -69,29 +88,42 @@ function CategoryList() {
         return;
       }
 
-      // Mise à jour de la liste locale en filtrant la catégorie supprimée
-      setCategories(categories.filter((cat) => cat.id !== id));
+      setCategories((prev) => prev.filter((cat) => cat.id !== id));
     } catch (err) {
       console.error("Erreur lors de la suppression :", err);
       alert("Impossible de joindre le serveur pour supprimer.");
     }
   };
 
-  // Helper pour afficher correctement l'image depuis Laravel Storage
+  // Helper dynamique pour construire l'URL de l'image
   const getImageUrl = (category: Category) => {
     if (category.image_url) return category.image_url;
+
     if (category.image) {
-      // Si l'image est un chemin relatif stocké dans 'storage/...'
-      return category.image.startsWith("http")
-        ? category.image
-        : `http://localhost:8000/storage/${category.image}`;
+      if (
+        category.image.startsWith("http://") ||
+        category.image.startsWith("https://") ||
+        category.image.startsWith("data:")
+      ) {
+        return category.image;
+      }
+
+      const cleanPath = category.image.replace(/^\//, "");
+      if (cleanPath.startsWith("storage/")) {
+        return `${STORAGE_BASE_URL}/${cleanPath}`;
+      }
+
+      return `${STORAGE_BASE_URL}/storage/${cleanPath}`;
     }
-    return "/src/assets/myy.jpeg"; // Image par défaut de fallback
+
+    return "/src/assets/myy.jpeg";
   };
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-4xl font-bold text-center mb-8 text-white">Listes des Catégories</h1>
+      <h1 className="text-4xl font-bold text-center mb-8 text-white">
+        Listes des Catégories
+      </h1>
 
       <div className="flex flex-col md:flex-row justify-between items-center mb-6">
         <div className="w-full md:w-1/3 mb-4 md:mb-0">
@@ -109,7 +141,6 @@ function CategoryList() {
         </Link>
       </div>
 
-      {/* Message d'erreur */}
       {error && (
         <div className="mb-4 p-4 bg-red-500 text-white rounded-lg text-center font-medium">
           {error}
@@ -127,7 +158,6 @@ function CategoryList() {
             </tr>
           </thead>
           <tbody className="text-gray-600 text-sm">
-            {/* 1. État de Chargement */}
             {loading ? (
               <tr>
                 <td colSpan={4} className="py-6 text-center text-gray-500">
@@ -135,14 +165,12 @@ function CategoryList() {
                 </td>
               </tr>
             ) : categories.length === 0 ? (
-              /* 2. Aucune catégorie en BDD */
               <tr>
                 <td colSpan={4} className="py-6 text-center text-gray-500">
                   Aucune catégorie trouvée dans la base de données.
                 </td>
               </tr>
             ) : (
-              /* 3. Affichage de la liste dynamique */
               categories.map((category) => (
                 <tr
                   key={category.id}
@@ -155,7 +183,6 @@ function CategoryList() {
                       alt={category.name}
                       className="w-10 h-10 rounded-lg object-cover border border-gray-200"
                       onError={(e) => {
-                        // Image par défaut si le lien d'image échoue
                         (e.target as HTMLImageElement).src = "/src/assets/myy.jpeg";
                       }}
                     />
@@ -165,7 +192,6 @@ function CategoryList() {
                   </td>
                   <td className="py-3 px-6 text-center">
                     <div className="flex justify-center items-center space-x-3">
-                      {/* Bouton Éditer */}
                       <Link
                         to={`/admin/update-category/${category.id}`}
                         className="transform hover:text-blue-500 hover:scale-110 transition-transform"
@@ -187,7 +213,6 @@ function CategoryList() {
                         </svg>
                       </Link>
 
-                      {/* Bouton Supprimer */}
                       <button
                         onClick={() => handleDelete(category.id)}
                         className="transform hover:text-red-500 hover:scale-110 transition-transform"

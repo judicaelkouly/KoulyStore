@@ -9,6 +9,11 @@ import {
   MdLocalOffer
 } from "react-icons/md";
 
+// URL de base de l'API (ex: https://ton-back.onrender.com/api ou http://localhost:8000/api)
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
+// URL de base pour le stockage des fichiers médias/avatars
+const STORAGE_BASE_URL = API_BASE_URL.replace(/\/api\/?$/, "/storage");
+
 export interface UserData {
   id?: string | number;
   username: string;
@@ -67,7 +72,7 @@ function HeaderConnect({ onLogout }: HeaderProps) {
     if (!rawAvatar || typeof rawAvatar !== "string") return null;
     if (rawAvatar.startsWith("http") || rawAvatar.startsWith("blob:")) return rawAvatar;
     const cleanPath = rawAvatar.replace(/^\//, "").replace(/^storage\//, "");
-    return `http://localhost:8000/storage/${cleanPath}`;
+    return `${STORAGE_BASE_URL}/${cleanPath}`;
   };
 
   // Fermer la dropdown de recherche au clic à l'extérieur
@@ -87,7 +92,7 @@ function HeaderConnect({ onLogout }: HeaderProps) {
       setLoading(true);
       try {
         // Profile
-        const resProfile = await fetch("http://localhost:8000/api/profile", {
+        const resProfile = await fetch(`${API_BASE_URL}/profile`, {
           method: "GET",
           headers: getAuthHeaders(),
           credentials: "include",
@@ -107,7 +112,7 @@ function HeaderConnect({ onLogout }: HeaderProps) {
         }
 
         // Cart
-        const resCart = await fetch("http://localhost:8000/api/cart", {
+        const resCart = await fetch(`${API_BASE_URL}/cart`, {
           method: "GET",
           headers: getAuthHeaders(),
           credentials: "include",
@@ -148,7 +153,7 @@ function HeaderConnect({ onLogout }: HeaderProps) {
     const delayDebounceFn = setTimeout(async () => {
       setIsSearching(true);
       try {
-        const res = await fetch(`http://localhost:8000/api/products?search=${encodeURIComponent(searchQuery)}`, {
+        const res = await fetch(`${API_BASE_URL}/products?search=${encodeURIComponent(searchQuery)}`, {
           headers: getAuthHeaders(),
         });
         if (res.ok) {

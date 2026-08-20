@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
 interface ValidationError {
   [key: string]: string[];
 }
@@ -71,7 +73,7 @@ function AddCategory() {
 
     try {
       // 3. Appel de l'API Laravel avec les credentials pour le cookie Sanctum
-      const response = await fetch("http://localhost:8000/api/admin/categories", {
+      const response = await fetch(`${API_BASE_URL}/admin/categories`, {
         method: "POST",
         headers: {
           "Accept": "application/json",

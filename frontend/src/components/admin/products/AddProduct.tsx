@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 
-// 1. Interfaces TypeScript mises à jour
+// Configuration dynamique de l'URL d'API
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
+
+// Interfaces TypeScript
 interface ApiCategory {
   id: number | string;
   name: string;
@@ -12,7 +15,7 @@ interface ApiCategory {
 interface ProductFormData {
   title: string;
   description: string;
-  category_id: string; // Stocke l'ID de la catégorie pour la BDD
+  category_id: string;
   price: string;
   promo_price: string;
   stock: string;
@@ -25,11 +28,10 @@ function AddProduct() {
     Chaussures: ["38", "39", "40", "41", "42", "43", "44"],
     Mode_Hommes_Chaussures: ["38", "39", "40", "41", "42", "43", "44"],
     Mode_Hommes_Vêtements: ["S", "M", "L", "XL", "XXL", "3XL", "4XL"],
-    Mode_Enfants_Chaussures: ["25", "26", "27", "28", "29", "30", "31","32","33","34","35","36","37",],
+    Mode_Enfants_Chaussures: ["25", "26", "27", "28", "29", "30", "31", "32", "33", "34", "35", "36", "37"],
     Mode_Enfants_Vêtements: ["XXS", "XS", "L", "S"],
     Mode_Femmes_Chaussures: ["38", "39", "40", "41", "42", "43", "44"],
     Mode_Femmes_Vêtements: ["S", "M", "L", "XL", "XXL", "3XL", "4XL"],
-    
   };
 
   // États pour l'API et les catégories
@@ -56,14 +58,33 @@ function AddProduct() {
   const [validationErrors, setValidationErrors] = useState<Record<string, string[]>>({});
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
+  // Helper pour récupérer le token XSRF des cookies (Laravel Sanctum)
+  const getXsrfToken = () => {
+    const cookies = document.cookie.split(";");
+    for (let cookie of cookies) {
+      const [name, value] = cookie.trim().split("=");
+      if (name === "XSRF-TOKEN") {
+        return decodeURIComponent(value);
+      }
+    }
+    return "";
+  };
+
+  const getAuthHeaders = () => {
+    const xsrfToken = getXsrfToken();
+    return {
+      Accept: "application/json",
+      ...(xsrfToken ? { "X-XSRF-TOKEN": xsrfToken } : {}),
+    };
+  };
+
   // 📥 Récupération des catégories depuis l'API Backend
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await fetch("http://localhost:8000/api/categories", {
-          headers: {
-            Accept: "application/json",
-          },
+        const response = await fetch(`${API_BASE_URL}/categories`, {
+          headers: getAuthHeaders(),
+          credentials: "include",
         });
 
         if (response.ok) {
@@ -182,13 +203,10 @@ function AddProduct() {
         }
       });
 
-      const response = await fetch("http://localhost:8000/api/admin/products", {
+      const response = await fetch(`${API_BASE_URL}/admin/products`, {
         method: "POST",
-        headers: {
-          Accept: "application/json",
-          // Ne pas ajouter 'Content-Type': 'multipart/form-data', fetch s'en charge automatiquement
-        },
-        credentials: "include", // Utile si tu utilises la session/Sanctum Laravel
+        headers: getAuthHeaders(),
+        credentials: "include",
         body: data,
       });
 
@@ -231,13 +249,14 @@ function AddProduct() {
         className="space-y-6 max-w-2xl w-full bg-white p-6 rounded-xl border border-gray-200 shadow-sm"
       >
         <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg text-center font-bold text-gray-800">
-                Ajouter un nouveau produit
-              </h2>
-              <Link to="/admin/dashboard" className="text-xs text-indigo-600 hover:underline">
-                &larr; Retour
-              </Link>
+          <h2 className="text-lg text-center font-bold text-gray-800">
+            Ajouter un nouveau produit
+          </h2>
+          <Link to="/admin/dashboard" className="text-xs text-indigo-600 hover:underline">
+            &larr; Retour
+          </Link>
         </div>
+
         {/* Message de Succès */}
         {successMessage && (
           <div className="p-3 bg-green-50 border border-green-200 text-green-700 text-sm rounded-lg">
@@ -302,7 +321,7 @@ function AddProduct() {
 
         {/* Nom du Produit */}
         <div className="flex flex-col gap-1">
-          <label className="text-sm font-semibold text-gray-700" htmlFor="name">
+          <label className="text-sm font-semibold text-gray-700" htmlFor="title">
             Nom du produit
           </label>
           <input
@@ -312,12 +331,14 @@ function AddProduct() {
             onChange={handleInputChange}
             placeholder="Ex: T-Shirt en coton Bio"
             className={`w-full text-sm outline-none py-2.5 px-3 rounded-lg border ${
-              validationErrors.name ? "border-red-500" : "border-gray-300"
+              validationErrors.title || validationErrors.name ? "border-red-500" : "border-gray-300"
             } focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all`}
             required
           />
-          {validationErrors.name && (
-            <p className="text-xs text-red-500 mt-1">{validationErrors.name[0]}</p>
+          {(validationErrors.title || validationErrors.name) && (
+            <p className="text-xs text-red-500 mt-1">
+              {(validationErrors.title || validationErrors.name)[0]}
+            </p>
           )}
         </div>
 

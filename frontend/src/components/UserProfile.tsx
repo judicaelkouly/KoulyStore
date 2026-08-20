@@ -3,6 +3,10 @@ import { CiLogout } from "react-icons/ci";
 import { FaTachometerAlt, FaStar } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 
+// Configuration dynamique de l'API et du stockage
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
+const STORAGE_BASE_URL = API_BASE_URL.replace(/\/api\/?$/, "");
+
 // Interfaces TypeScript
 export interface UserData {
   id?: string | number;
@@ -176,10 +180,10 @@ function UserProfile() {
     let cleanPath = target.replace(/^\//, "");
 
     if (cleanPath.startsWith("storage/")) {
-      return `http://localhost:8000/${cleanPath}`;
+      return `${STORAGE_BASE_URL}/${cleanPath}`;
     }
 
-    return `http://localhost:8000/storage/${cleanPath}`;
+    return `${STORAGE_BASE_URL}/storage/${cleanPath}`;
   };
 
   const getItemImageUrl = (item: CartItem | OrderItemData): string | null => {
@@ -211,7 +215,7 @@ function UserProfile() {
       setError(null);
 
       try {
-        const resProfile = await fetch("http://localhost:8000/api/profile", {
+        const resProfile = await fetch(`${API_BASE_URL}/profile`, {
           method: "GET",
           headers: getCookieAuthHeaders(),
           credentials: "include",
@@ -248,7 +252,7 @@ function UserProfile() {
           setIsAuthenticated(true);
         }
 
-        const resOrders = await fetch("http://localhost:8000/api/user/orders", {
+        const resOrders = await fetch(`${API_BASE_URL}/user/orders`, {
           method: "GET",
           headers: getCookieAuthHeaders(),
           credentials: "include",
@@ -261,7 +265,7 @@ function UserProfile() {
           );
         }
 
-        const resCart = await fetch("http://localhost:8000/api/cart", {
+        const resCart = await fetch(`${API_BASE_URL}/cart`, {
           method: "GET",
           headers: getCookieAuthHeaders(),
           credentials: "include",
@@ -311,7 +315,7 @@ function UserProfile() {
         headers["X-XSRF-TOKEN"] = xsrfToken;
       }
 
-      await fetch("http://localhost:8000/api/logout", {
+      await fetch(`${API_BASE_URL}/logout`, {
         method: "POST",
         headers,
         credentials: "include",
@@ -339,7 +343,7 @@ function UserProfile() {
     setError(null);
 
     try {
-      const response = await fetch(`http://localhost:8000/api/cart/${cartItemId}`, {
+      const response = await fetch(`${API_BASE_URL}/cart/${cartItemId}`, {
         method: "DELETE",
         headers: getCookieAuthHeaders(),
         credentials: "include",
@@ -476,7 +480,7 @@ function UserProfile() {
         headers["X-XSRF-TOKEN"] = xsrfToken;
       }
 
-      const response = await fetch("http://localhost:8000/api/profile", {
+      const response = await fetch(`${API_BASE_URL}/profile`, {
         method: "POST",
         headers,
         credentials: "include",
@@ -537,7 +541,7 @@ function UserProfile() {
     setError(null);
 
     try {
-      const response = await fetch(`http://localhost:8000/api/products/${reviewProductId}/reviews`, {
+      const response = await fetch(`${API_BASE_URL}/products/${reviewProductId}/reviews`, {
         method: "POST",
         headers: getCookieAuthHeaders(),
         credentials: "include",
