@@ -1,5 +1,7 @@
-import  { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
+
 // 1. Interface pour l'utilisateur
 export interface User {
   id: number | string;
@@ -18,6 +20,9 @@ function UserList() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<number | string | null>(null);
+
+  // 👈 État pour la barre de recherche
+  const [searchTerm, setSearchTerm] = useState<string>("");
 
   // Helper pour récupérer le token XSRF dans les cookies (Laravel Sanctum)
   const getXsrfToken = (): string => {
@@ -112,21 +117,74 @@ function UserList() {
     }
   };
 
+  // 👈 Filtrage dynamique multicritère
+  const filteredUsers = users.filter((user) => {
+    const query = searchTerm.trim().toLowerCase();
+    if (!query) return true;
+
+    const fullName = (user.username || user.name || "").toLowerCase();
+    const email = user.email.toLowerCase();
+    const phone = (user.phone || user.number || "").toLowerCase();
+    const address = (user.address || user.city || "").toLowerCase();
+    const role = (user.role || "client").toLowerCase();
+
+    return (
+      fullName.includes(query) ||
+      email.includes(query) ||
+      phone.includes(query) ||
+      address.includes(query) ||
+      role.includes(query)
+    );
+  });
+
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-4xl font-bold text-center mb-8 text-white">UserList</h1>
 
-      {/* Barre d'action supérieure */}
+      {/* Barre d'action supérieure avec champ de recherche */}
       <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
         <div className="w-full md:w-auto">
           <a
-            href="/admin"
+            href="/admin/dashboard"
             className="inline-block focus:outline-none text-white text-sm py-2.5 px-4 rounded-lg bg-blue-500 hover:bg-blue-400 font-semibold transition duration-200"
           >
             ← Back
           </a>
         </div>
-        
+
+        {/* 👈 Champ de Recherche */}
+        <div className="relative w-full md:w-80">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <svg
+              className="h-4 w-4 text-gray-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+          </div>
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Rechercher par nom, email, rôle..."
+            className="w-full pl-9 pr-8 py-2 text-sm bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors shadow-sm"
+          />
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm("")}
+              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 text-sm"
+            >
+              ✕
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Message d'erreur */}
@@ -162,14 +220,26 @@ function UserList() {
                   Chargement des utilisateurs...
                 </td>
               </tr>
-            ) : users.length === 0 ? (
+            ) : filteredUsers.length === 0 ? (
               <tr>
-                <td colSpan={6} className="py-8 text-center text-gray-500">
-                  Aucun utilisateur trouvé.
+                <td colSpan={6} className="py-8 text-center text-gray-500 space-y-2">
+                  <p>
+                    {searchTerm
+                      ? `Aucun utilisateur ne correspond à "${searchTerm}".`
+                      : "Aucun utilisateur trouvé."}
+                  </p>
+                  {searchTerm && (
+                    <button
+                      onClick={() => setSearchTerm("")}
+                      className="text-xs font-semibold text-blue-500 hover:underline"
+                    >
+                      Effacer la recherche
+                    </button>
+                  )}
                 </td>
               </tr>
             ) : (
-              users.map((user) => {
+              filteredUsers.map((user) => {
                 const fullName = user.username || user.name || "N/A";
                 const phone = user.phone || user.number || "N/A";
                 const address = user.address || (user.city ? `${user.city}` : "N/A");
@@ -202,7 +272,7 @@ function UserList() {
                     <td className="py-3 px-6 text-center">
                       <div className="flex items-center justify-center gap-2">
                         <a
-                          href={`/admin/users/edit/${user.id}`}
+                          href={``}
                           className="w-4 transform hover:text-blue-500 hover:scale-110 transition duration-150"
                           title="Modifier"
                         >

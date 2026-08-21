@@ -13,7 +13,7 @@ export interface Product {
   price: number | string;
   promo_price?: number | string | null;
   stock: number;
-  is_active?: boolean; // 👈 Champ pour activer/désactiver
+  is_active?: boolean;
   category?: {
     id: number | string;
     name: string;
@@ -26,7 +26,10 @@ function ProductList() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<number | string | null>(null);
-  const [togglingId, setTogglingId] = useState<number | string | null>(null); // Loader pour le switch
+  const [togglingId, setTogglingId] = useState<number | string | null>(null);
+
+  // 👈 État pour la barre de recherche
+  const [searchTerm, setSearchTerm] = useState<string>("");
 
   // Helper pour récupérer le token XSRF des cookies (Laravel Sanctum)
   const getXsrfToken = () => {
@@ -86,7 +89,7 @@ function ProductList() {
     try {
       const response = await fetch(`${API_BASE_URL}/admin/products/${id}/toggle-status`, {
         method: "PATCH",
-        credentials: "include", // Transmet les cookies de session Admin
+        credentials: "include",
         headers: {
           ...getAuthHeaders(),
           "Content-Type": "application/json",
@@ -99,7 +102,6 @@ function ProductList() {
         throw new Error(data.message || "Erreur lors du changement de statut.");
       }
 
-      // Mise à jour de l'état local du produit
       setProducts((prevProducts) =>
         prevProducts.map((p) =>
           p.id === id ? { ...p, is_active: data.is_active ?? !currentStatus } : p
@@ -146,6 +148,21 @@ function ProductList() {
       setDeletingId(null);
     }
   };
+
+  // 👈 Filtrage dynamique des produits par nom ou catégorie
+  const filteredProducts = products.filter((product) => {
+    const query = searchTerm.trim().toLowerCase();
+    if (!query) return true;
+
+    const productName = (product.title || product.name || "").toLowerCase();
+    const categoryName = (
+      typeof product.category === "object"
+        ? product.category?.name
+        : product.category || ""
+    ).toLowerCase();
+
+    return productName.includes(query) || categoryName.includes(query);
+  });
 
   // 🖼️ 4. Extraction sécurisée de l'image
   const getProductImage = (product: Product): string => {
@@ -194,21 +211,56 @@ function ProductList() {
           Liste des Produits
         </h1>
 
-        {/* Barre d'action supérieure */}
-        <div className="flex flex-col md:flex-row justify-between items-center mb-6">
-          <div className="w-full md:w-1/3 mb-4 md:mb-0">
+        {/* Barre d'action supérieure avec Recherche */}
+        <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
+          <div className="flex items-center gap-3 w-full md:w-auto">
             <Link
               to="/admin/dashboard"
               className="focus:outline-none text-white text-sm py-2.5 px-4 rounded-lg bg-blue-500 hover:bg-blue-400 transition"
             >
               Retour
             </Link>
+
+            <Link to="/admin/add-product">
+              <button className="bg-blue-500 text-white px-4 py-2.5 rounded-lg hover:bg-blue-600 transition duration-300 font-medium text-sm">
+                + Ajouter un Produit
+              </button>
+            </Link>
           </div>
-          <Link to="/admin/add-product">
-            <button className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition duration-300 font-medium text-sm">
-              + Ajouter un Produit
-            </button>
-          </Link>
+
+          {/* 👈 Champ de Recherche */}
+          <div className="relative w-full md:w-72">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg
+                className="h-4 w-4 text-gray-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+            </div>
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Rechercher un produit ou catégorie..."
+              className="w-full pl-9 pr-8 py-2 text-sm bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+            />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm("")}
+                className="absolute inset-y-0 right-0 pr-2.5 flex items-center text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Tableau d'affichage */}
@@ -246,26 +298,37 @@ function ProductList() {
                 </tr>
               )}
 
-              {/* Aucun produit */}
-              {!loading && !error && products.length === 0 && (
+              {/* Aucun produit correspondant */}
+              {!loading && !error && filteredProducts.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="py-8 text-center text-gray-400">
-                    Aucun produit trouvé dans la base de données.
+                  <td colSpan={8} className="py-8 text-center text-gray-500 space-y-2">
+                    <p>
+                      {searchTerm
+                        ? `Aucun produit ne correspond à la recherche "${searchTerm}".`
+                        : "Aucun produit trouvé dans la base de données."}
+                    </p>
+                    {searchTerm && (
+                      <button
+                        onClick={() => setSearchTerm("")}
+                        className="text-xs font-semibold text-blue-500 hover:underline"
+                      >
+                        Effacer la recherche
+                      </button>
+                    )}
                   </td>
                 </tr>
               )}
 
-              {/* Boucle d'affichage des produits */}
+              {/* Boucle d'affichage des produits filtrés */}
               {!loading &&
                 !error &&
-                products.map((product) => {
+                filteredProducts.map((product) => {
                   const productName = product.title || product.name || "Sans nom";
                   const categoryName =
                     typeof product.category === "object"
                       ? product.category?.name
                       : product.category || "N/A";
                   
-                  // Considéré actif par défaut si le booléen n'est pas explicite
                   const isActive = product.is_active ?? true;
 
                   return (
@@ -413,7 +476,7 @@ function ProductList() {
         <div className="flex justify-between items-center mt-6">
           <div>
             <span className="text-sm text-white">
-              Affichage de {products.length} produit(s) au total
+              Affichage de {filteredProducts.length} produit(s) sur {products.length}
             </span>
           </div>
           <div className="flex space-x-2">

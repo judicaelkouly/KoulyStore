@@ -1,17 +1,25 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom"; // Ajout de useNavigate
+import { Link, useNavigate } from "react-router-dom";
 import ProductList from "./products/ProductList";
 import UserList from "./user/UserList";
 import OrderList from "./commandes/OrderList";
 import CategoryList from "./categories/CategoryList";
 import BannerList from "./bannieres/BannerList";
+import ReturnList from "./returns/ReturnList"; // 👈 Composant de gestion des retours
 
-import { FaChartBar, FaTachometerAlt, FaUsers, FaHome, FaDollarSign, FaSignOutAlt } from "react-icons/fa"; // Ajout de FaSignOutAlt
+import { 
+  FaChartBar, 
+  FaTachometerAlt, 
+  FaUsers, 
+  FaHome, 
+  FaDollarSign, 
+  FaSignOutAlt, 
+  FaReceipt,
+  FaUndoAlt // 👈 Icône pour les retours
+} from "react-icons/fa";
 import { MdOutlineProductionQuantityLimits } from "react-icons/md";
 import { TbCategoryPlus } from "react-icons/tb";
-//import { CgReorder } from "react-icons/cg";
 import { PiFlagBannerFoldFill } from "react-icons/pi";
-import {FaReceipt} from "react-icons/fa";
 
 // Interfaces pour le typage des réponses API
 interface OrderSummary {
@@ -21,6 +29,11 @@ interface OrderSummary {
 
 interface ItemSummary {
   id: number;
+}
+
+interface ReturnSummary {
+  id: number;
+  status: string;
 }
 
 interface UserProfileData {
@@ -33,11 +46,13 @@ interface UserProfileData {
 
 function AdminPage() {
   const [activeTab, setActiveTab] = useState("dashboard");
-  const navigate = useNavigate(); // Initialisation pour la redirection
+  const navigate = useNavigate();
 
   // États pour stocker les métriques dynamiques
   const [totalRevenue, setTotalRevenue] = useState<number>(0);
   const [totalOrdersCount, setTotalOrdersCount] = useState<number>(0);
+  const [unreadOrdersCount, setUnreadOrdersCount] = useState<number>(0);
+  const [pendingReturnsCount, setPendingReturnsCount] = useState<number>(0); // 👈 Compteur des retours en attente
   const [totalUsersCount, setTotalUsersCount] = useState<number>(0);
   const [totalProductsCount, setTotalProductsCount] = useState<number>(0);
   const [loadingKpis, setLoadingKpis] = useState<boolean>(true);
@@ -45,7 +60,7 @@ function AdminPage() {
   // État pour l'utilisateur admin actuellement connecté
   const [adminUser, setAdminUser] = useState<UserProfileData | null>(null);
 
-  // Helper pour récupérer le token XSRF si besoin (Laravel Sanctum)
+  // Helper pour récupérer le token XSRF (Laravel Sanctum)
   const getXsrfToken = () => {
     const cookies = document.cookie.split(";");
     for (let cookie of cookies) {
@@ -68,67 +83,85 @@ function AdminPage() {
   };
 
   // Chargement des données dynamiques du Dashboard et du Profil Admin
-  useEffect(() => {
-    const fetchDashboardStats = async () => {
-      setLoadingKpis(true);
-      const xsrfToken = getXsrfToken();
-      const headers: Record<string, string> = {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      };
-      if (xsrfToken) headers["X-XSRF-TOKEN"] = xsrfToken;
-
-      try {
-        const [ordersRes, usersRes, productsRes, profileRes] = await Promise.allSettled([
-          fetch("http://localhost:8000/api/admin/orders", { headers, credentials: "include" }),
-          fetch("http://localhost:8000/api/users", { headers, credentials: "include" }),
-          fetch("http://localhost:8000/api/products", { headers, credentials: "include" }),
-          fetch("http://localhost:8000/api/profile", { headers, credentials: "include" }),
-        ]);
-
-        if (ordersRes.status === "fulfilled" && ordersRes.value.ok) {
-          const dataData = await ordersRes.value.json();
-          const ordersList: OrderSummary[] = Array.isArray(dataData)
-            ? dataData
-            : dataData.orders || dataData.data || [];
-
-          setTotalOrdersCount(ordersList.length);
-
-          const revenue = ordersList.reduce((acc, order) => {
-            return acc + (Number(order.total_amount) || 0);
-          }, 0);
-          setTotalRevenue(revenue);
-        }
-
-        if (usersRes.status === "fulfilled" && usersRes.value.ok) {
-          const usersData = await usersRes.value.json();
-          const usersList: ItemSummary[] = Array.isArray(usersData)
-            ? usersData
-            : usersData.users || usersData.data || [];
-          setTotalUsersCount(usersList.length);
-        }
-
-        if (productsRes.status === "fulfilled" && productsRes.value.ok) {
-          const productsData = await productsRes.value.json();
-          const productsList: ItemSummary[] = Array.isArray(productsData)
-            ? productsData
-            : productsData.products || productsData.data || [];
-          setTotalProductsCount(productsList.length);
-        }
-
-        if (profileRes.status === "fulfilled" && profileRes.value.ok) {
-          const profileData = await profileRes.value.json();
-          const userData = profileData.user || profileData.data || profileData;
-          setAdminUser(userData);
-        }
-
-      } catch (err) {
-        console.error("Erreur lors de la récupération des KPI:", err);
-      } finally {
-        setLoadingKpis(false);
-      }
+  const fetchDashboardStats = async () => {
+    setLoadingKpis(true);
+    const xsrfToken = getXsrfToken();
+    const headers: Record<string, string> = {
+      Accept: "application/json",
+      "Content-Type": "application/json",
     };
+    if (xsrfToken) headers["X-XSRF-TOKEN"] = xsrfToken;
 
+    try {
+      const [ordersRes, unreadRes, returnsRes, usersRes, productsRes, profileRes] = await Promise.allSettled([
+        fetch("http://localhost:8000/api/admin/orders", { headers, credentials: "include" }),
+        fetch("http://localhost:8000/api/admin/orders/unread-count", { headers, credentials: "include" }),
+        fetch("http://localhost:8000/api/admin/returns", { headers, credentials: "include" }), // 👈 API retours
+        fetch("http://localhost:8000/api/users", { headers, credentials: "include" }),
+        fetch("http://localhost:8000/api/products", { headers, credentials: "include" }),
+        fetch("http://localhost:8000/api/profile", { headers, credentials: "include" }),
+      ]);
+
+      if (ordersRes.status === "fulfilled" && ordersRes.value.ok) {
+        const dataData = await ordersRes.value.json();
+        const ordersList: OrderSummary[] = Array.isArray(dataData)
+          ? dataData
+          : dataData.orders || dataData.data || [];
+
+        setTotalOrdersCount(ordersList.length);
+
+        const revenue = ordersList.reduce((acc, order) => {
+          return acc + (Number(order.total_amount) || 0);
+        }, 0);
+        setTotalRevenue(revenue);
+      }
+
+      if (unreadRes.status === "fulfilled" && unreadRes.value.ok) {
+        const unreadData = await unreadRes.value.json();
+        setUnreadOrdersCount(unreadData.count || 0);
+      }
+
+      // Traitement des retours en attente
+      if (returnsRes.status === "fulfilled" && returnsRes.value.ok) {
+        const returnsData = await returnsRes.value.json();
+        const returnsList: ReturnSummary[] = Array.isArray(returnsData)
+          ? returnsData
+          : returnsData.data || [];
+        
+        const pendingCount = returnsList.filter((item) => item.status === "pending").length;
+        setPendingReturnsCount(pendingCount);
+      }
+
+      if (usersRes.status === "fulfilled" && usersRes.value.ok) {
+        const usersData = await usersRes.value.json();
+        const usersList: ItemSummary[] = Array.isArray(usersData)
+          ? usersData
+          : usersData.users || usersData.data || [];
+        setTotalUsersCount(usersList.length);
+      }
+
+      if (productsRes.status === "fulfilled" && productsRes.value.ok) {
+        const productsData = await productsRes.value.json();
+        const productsList: ItemSummary[] = Array.isArray(productsData)
+          ? productsData
+          : productsData.products || productsData.data || [];
+        setTotalProductsCount(productsList.length);
+      }
+
+      if (profileRes.status === "fulfilled" && profileRes.value.ok) {
+        const profileData = await profileRes.value.json();
+        const userData = profileData.user || profileData.data || profileData;
+        setAdminUser(userData);
+      }
+
+    } catch (err) {
+      console.error("Erreur lors de la récupération des KPI:", err);
+    } finally {
+      setLoadingKpis(false);
+    }
+  };
+
+  useEffect(() => {
     fetchDashboardStats();
   }, []);
 
@@ -149,7 +182,6 @@ function AdminPage() {
       });
 
       if (response.ok) {
-        // Redirection vers l'accueil après déconnexion réussie
         navigate("/");
       } else {
         console.error("Erreur lors de la déconnexion");
@@ -164,7 +196,8 @@ function AdminPage() {
     { id: "users", label: "Users", icon: <FaUsers /> },
     { id: "products", label: "Products", icon: <MdOutlineProductionQuantityLimits /> },
     { id: "categories", label: "Categories", icon: <TbCategoryPlus /> },
-    { id: "orders", label: "Orders", icon: <FaReceipt /> },
+    { id: "orders", label: "Orders", icon: <FaReceipt />, badge: unreadOrdersCount },
+    { id: "returns", label: "Retours", icon: <FaUndoAlt />, badge: pendingReturnsCount }, // 👈 Nouvel onglet
     { id: "banner", label: "Bannière", icon: <PiFlagBannerFoldFill /> },
     { id: "analytics", label: "Analytics", icon: <FaChartBar /> },
   ];
@@ -222,10 +255,15 @@ function AdminPage() {
                     {loadingKpis ? "..." : totalOrdersCount.toLocaleString("fr-FR")}
                   </p>
                   <div className="flex items-center mt-2">
-                    <span className="text-green-600 text-sm font-medium flex items-center">
-                      ↑ 15%
-                    </span>
-                    <span className="text-gray-500 text-xs ml-2">vs le mois dernier</span>
+                    {unreadOrdersCount > 0 ? (
+                      <span className="text-red-600 text-sm font-bold flex items-center">
+                        ● {unreadOrdersCount} nouvelle{unreadOrdersCount > 1 ? "s" : ""} commande{unreadOrdersCount > 1 ? "s" : ""}
+                      </span>
+                    ) : (
+                      <span className="text-green-600 text-sm font-medium flex items-center">
+                        À jour
+                      </span>
+                    )}
                   </div>
                 </div>
                 <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
@@ -234,22 +272,28 @@ function AdminPage() {
               </div>
             </div>
 
+            {/* 👈 Carte KPI pour les retours */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all duration-200 hover:-translate-y-0.5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Products</p>
+                  <p className="text-sm font-medium text-gray-600">Retours en attente</p>
                   <p className="text-3xl font-bold text-gray-900 mt-2">
-                    {loadingKpis ? "..." : totalProductsCount.toLocaleString("fr-FR")}
+                    {loadingKpis ? "..." : pendingReturnsCount.toLocaleString("fr-FR")}
                   </p>
                   <div className="flex items-center mt-2">
-                    <span className="text-green-600 text-sm font-medium flex items-center">
-                      ↑ 5%
-                    </span>
-                    <span className="text-gray-500 text-xs ml-2">vs le mois dernier</span>
+                    {pendingReturnsCount > 0 ? (
+                      <span className="text-red-600 text-sm font-bold flex items-center">
+                        ● Action requise
+                      </span>
+                    ) : (
+                      <span className="text-green-600 text-sm font-medium flex items-center">
+                        Aucun retour en attente
+                      </span>
+                    )}
                   </div>
                 </div>
-                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                  <MdOutlineProductionQuantityLimits className="text-purple-600 text-xl" />
+                <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                  <FaUndoAlt className="text-red-600 text-xl" />
                 </div>
               </div>
             </div>
@@ -284,7 +328,15 @@ function AdminPage() {
         return (
           <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
             <h2 className="text-2xl font-bold text-gray-800 mb-4">Commandes récentes</h2>
-            <OrderList />
+            <OrderList onOrdersUpdated={fetchDashboardStats} />
+          </div>
+        );
+
+      case "returns":
+        return (
+          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">Demandes de Retour Produit</h2>
+            <ReturnList onReturnsUpdated={fetchDashboardStats} />
           </div>
         );
 
@@ -320,16 +372,15 @@ function AdminPage() {
         <div>
           <div className="flex items-center justify-center h-16 bg-gray-900">
             <div className="w-full mt-10 mr-15 md:w-[45%] lg:w-[70%] flex flex-col items-center md:items-start text-center md:text-left">
-               <div className="flex items-center">
-                            <a href="/" className="flex items-center gap-3 group">
-                                <img 
-                                src="/src/assets/logo4.png" 
-                                alt="Kouly'Store Logo"
-                                className="h-10 sm:h-40 w-auto object-contain transition-transform group-hover:scale-105"
-
-                                />
-                            </a>
-                            </div>
+              <div className="flex items-center">
+                <a href="/" className="flex items-center gap-3 group">
+                  <img 
+                    src="/src/assets/logo4.png" 
+                    alt="Kouly'Store Logo"
+                    className="h-10 sm:h-40 w-auto object-contain transition-transform group-hover:scale-105"
+                  />
+                </a>
+              </div>
               <div className='w-full max-w-52 h-px mt-6 bg-gradient-to-r from-transparent via-white/20 to-transparent md:bg-none'></div>
             </div>
           </div>
@@ -342,20 +393,29 @@ function AdminPage() {
                   <button
                     key={item.id}
                     onClick={() => setActiveTab(item.id)}
-                    className={`w-full flex items-center px-4 py-3 font-bold rounded-lg transition-colors group ${
+                    className={`w-full flex items-center justify-between px-4 py-3 font-bold rounded-lg transition-colors group ${
                       isActive
                         ? "bg-gray-700 text-white"
                         : "text-gray-400 hover:bg-gray-700 hover:text-white"
                     }`}
                   >
-                    <span
-                      className={`mr-3 text-lg ${
-                        isActive ? "text-indigo-400" : "text-gray-400 group-hover:text-white"
-                      }`}
-                    >
-                      {item.icon}
-                    </span>
-                    {item.label}
+                    <div className="flex items-center">
+                      <span
+                        className={`mr-3 text-lg ${
+                          isActive ? "text-indigo-400" : "text-gray-400 group-hover:text-white"
+                        }`}
+                      >
+                        {item.icon}
+                      </span>
+                      {item.label}
+                    </div>
+
+                    {/* Badge visuel pour les notifications */}
+                    {item.badge && item.badge > 0 ? (
+                      <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full font-extrabold animate-pulse">
+                        {item.badge}
+                      </span>
+                    ) : null}
                   </button>
                 );
               })}
@@ -409,7 +469,6 @@ function AdminPage() {
                 </p>
               </div>
               <div className="flex items-center">
-                {/* Remplacement de la barre de recherche par le bouton de déconnexion */}
                 <button
                   onClick={handleLogout}
                   className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 hover:bg-red-600 hover:text-white rounded-lg font-semibold text-sm transition-colors duration-200 border border-red-100"

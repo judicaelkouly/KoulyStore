@@ -18,6 +18,9 @@ function CategoryList() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
+  // 👈 État pour la barre de recherche
+  const [searchTerm, setSearchTerm] = useState<string>("");
+
   // Helper pour récupérer le token XSRF des cookies (Laravel Sanctum)
   const getXsrfToken = () => {
     const cookies = document.cookie.split(";");
@@ -95,6 +98,11 @@ function CategoryList() {
     }
   };
 
+  // 👈 Filtrage dynamique des catégories par nom
+  const filteredCategories = categories.filter((category) =>
+    category.name.toLowerCase().includes(searchTerm.trim().toLowerCase())
+  );
+
   // Helper dynamique pour construire l'URL de l'image
   const getImageUrl = (category: Category) => {
     if (category.image_url) return category.image_url;
@@ -121,24 +129,60 @@ function CategoryList() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-4xl font-bold text-center mb-8 text-white">
-        Listes des Catégories
+      <h1 className="text-4xl font-bold text-center mb-8 text-gray-800">
+        Liste des Catégories
       </h1>
 
-      <div className="flex flex-col md:flex-row justify-between items-center mb-6">
-        <div className="w-full md:w-1/3 mb-4 md:mb-0">
+      {/* Header Actions & Recherche */}
+      <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
+        <div className="flex items-center gap-3 w-full md:w-auto">
           <Link
             to="/admin/dashboard"
-            className="focus:outline-black text-white text-sm py-2.5 px-4 rounded-lg bg-blue-500 hover:bg-blue-400"
+            className="focus:outline-black text-white text-sm py-2.5 px-4 rounded-lg bg-blue-500 hover:bg-blue-600 transition duration-300"
           >
             Retour
           </Link>
+          
+          <Link to="/admin/add-category">
+            <button className="bg-blue-500 text-white px-4 py-2.5 text-sm rounded-lg hover:bg-blue-600 transition duration-300">
+              Ajouter une catégorie
+            </button>
+          </Link>
         </div>
-        <Link to="/admin/add-category">
-          <button className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition duration-300">
-            Ajouter une catégorie
-          </button>
-        </Link>
+
+        {/* 👈 Champ de Recherche */}
+        <div className="relative w-full md:w-72">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <svg
+              className="h-4 w-4 text-gray-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+          </div>
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Rechercher une catégorie..."
+            className="w-full pl-9 pr-8 py-2 text-sm bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+          />
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm("")}
+              className="absolute inset-y-0 right-0 pr-2.5 flex items-center text-gray-400 hover:text-gray-600"
+            >
+              ✕
+            </button>
+          )}
+        </div>
       </div>
 
       {error && (
@@ -164,14 +208,26 @@ function CategoryList() {
                   Chargement des catégories...
                 </td>
               </tr>
-            ) : categories.length === 0 ? (
+            ) : filteredCategories.length === 0 ? (
               <tr>
-                <td colSpan={4} className="py-6 text-center text-gray-500">
-                  Aucune catégorie trouvée dans la base de données.
+                <td colSpan={4} className="py-8 text-center text-gray-500 space-y-2">
+                  <p>
+                    {searchTerm
+                      ? `Aucune catégorie ne correspond à la recherche "${searchTerm}".`
+                      : "Aucune catégorie trouvée dans la base de données."}
+                  </p>
+                  {searchTerm && (
+                    <button
+                      onClick={() => setSearchTerm("")}
+                      className="text-xs font-semibold text-blue-500 hover:underline"
+                    >
+                      Effacer la recherche
+                    </button>
+                  )}
                 </td>
               </tr>
             ) : (
-              categories.map((category) => (
+              filteredCategories.map((category) => (
                 <tr
                   key={category.id}
                   className="border-b border-gray-200 hover:bg-gray-100 transition-colors"

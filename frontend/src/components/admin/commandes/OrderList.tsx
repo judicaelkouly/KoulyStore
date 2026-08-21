@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
 const STORAGE_BASE_URL = API_BASE_URL.replace(/\/api\/?$/, "");
 
-// Interfaces TypeScript mises à jour avec la structure product & images
+// Interfaces TypeScript
 export interface User {
   id: number;
   name?: string;
@@ -36,7 +36,7 @@ export interface OrderItem {
   unit_price: string | number;
   quantity: number;
   size?: string | null;
-  product?: Product | null; // 👈 Relation du produit incluant l'image
+  product?: Product | null;
 }
 
 export interface OrderData {
@@ -45,20 +45,29 @@ export interface OrderData {
   order_number: string;
   total_amount: string | number;
   status: string;
+  full_name: string;
   city: string;
   shipping_address: string;
   phone: string;
   payment_method?: string;
+  is_read?: boolean | number;
   created_at: string;
   updated_at: string;
   user?: User;
   items?: OrderItem[];
 }
 
-function OrderList() {
+interface OrderListProps {
+  onOrdersUpdated?: () => void;
+}
+
+function OrderList({ onOrdersUpdated }: OrderListProps) {
   const [orders, setOrders] = useState<OrderData[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // 👈 État pour la barre de recherche
+  const [searchTerm, setSearchTerm] = useState<string>("");
 
   // Helper pour formater et valider les URLs d'images Laravel
   const formatImageUrl = (pathCandidate?: any): string | null => {
@@ -102,18 +111,15 @@ function OrderList() {
     const product = item.product;
     if (!product) return null;
 
-    // 1. Chercher la propriété image_url (accessor Laravel / $appends)
     if (product.image_url) {
       return formatImageUrl(product.image_url);
     }
 
-    // 2. Chercher dans les attributs directs du produit
     const directCandidate = product.image_path || product.image;
     if (directCandidate) {
       return formatImageUrl(directCandidate);
     }
 
-    // 3. Chercher dans la relation d'images (tableau)
     if (Array.isArray(product.images) && product.images.length > 0) {
       const firstImg = product.images[0];
       return formatImageUrl(firstImg);
@@ -134,48 +140,143 @@ function OrderList() {
     return "";
   };
 
-  // Chargement des commandes depuis l'API Laravel
-  useEffect(() => {
-    const fetchOrders = async () => {
-      setLoading(true);
-      setError(null);
+  // Chargement des commandes depuis l'API
+  const fetchOrders = async () => {
+    setLoading(true);
+    setError(null);
 
-      try {
-        const xsrfToken = getXsrfToken();
-        const headers: Record<string, string> = {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-        };
-        if (xsrfToken) {
-          headers["X-XSRF-TOKEN"] = xsrfToken;
-        }
-
-        const response = await fetch(`${API_BASE_URL}/admin/orders`, {
-          method: "GET",
-          headers,
-          credentials: "include",
-        });
-
-        if (!response.ok) {
-          throw new Error("Impossible de charger la liste des commandes.");
-        }
-
-        const data = await response.json();
-        const fetchedOrders = Array.isArray(data)
-          ? data
-          : data.orders || data.data || [];
-
-        setOrders(fetchedOrders);
-      } catch (err: any) {
-        console.error("Erreur récupération commandes:", err);
-        setError(err.message || "Une erreur est survenue lors du chargement.");
-      } finally {
-        setLoading(false);
+    try {
+      const xsrfToken = getXsrfToken();
+      const headers: Record<string, string> = {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      };
+      if (xsrfToken) {
+        headers["X-XSRF-TOKEN"] = xsrfToken;
       }
-    };
 
+      const response = await fetch(`${API_BASE_URL}/admin/orders`, {
+        method: "GET",
+        headers,
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        throw new Error("Impossible de charger la liste des commandes.");
+      }
+
+      const data = await response.json();
+      const fetchedOrders = Array.isArray(data)
+        ? data
+        : data.orders || data.data || [];
+
+      setOrders(fetchedOrders);
+    } catch (err: any) {
+      console.error("Erreur récupération commandes:", err);
+      setError(err.message || "Une erreur est survenue lors du chargement.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchOrders();
   }, []);
+
+  // Marquer une commande comme lue au clic
+  const handleMarkAsRead = async (order: OrderData) => {
+    if (order.is_read) return;
+
+    try {
+      const xsrfToken = getXsrfToken();
+      const headers: Record<string, string> = {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      };
+      if (xsrfToken) headers["X-XSRF-TOKEN"] = xsrfToken;
+
+      await fetch(`${API_BASE_URL}/admin/orders/${order.id}/read`, {
+        method: "PATCH",
+        headers,
+        credentials: "include",
+      });
+
+      // Mettre à jour l'état local
+      setOrders((prev) =>
+        prev.map((o) => (o.id === order.id ? { ...o, is_read: true } : o))
+      );
+
+      // Notifier le composant parent
+      if (onOrdersUpdated) {
+        onOrdersUpdated();
+      }
+    } catch (err) {
+      console.error("Erreur marquage commande comme lue:", err);
+    }
+  };
+
+  // 👈 Filtrage en temps réel selon le numéro de commande, nom ou téléphone
+  const filteredOrders = orders.filter((order) => {
+    const query = searchTerm.trim().toLowerCase();
+    if (!query) return true;
+
+    const orderNumber = (order.order_number || `#${order.id}`).toLowerCase();
+    const clientName = (order.full_name || order.user?.name || "").toLowerCase();
+    const phone = (order.phone || "").toLowerCase();
+
+    return (
+      orderNumber.includes(query) ||
+      clientName.includes(query) ||
+      phone.includes(query)
+    );
+  });
+
+  // Badge du moyen de paiement
+  const renderPaymentBadge = (method?: string) => {
+    const m = (method || "").toLowerCase().trim();
+
+    if (m.includes("wave")) {
+      return (
+        <span className="px-2.5 py-1 text-xs font-bold rounded-lg bg-sky-100 text-sky-800 border border-sky-200">
+          Wave
+        </span>
+      );
+    }
+    if (m.includes("orange") || m.includes("om")) {
+      return (
+        <span className="px-2.5 py-1 text-xs font-bold rounded-lg bg-orange-100 text-orange-800 border border-orange-200">
+          Orange Money
+        </span>
+      );
+    }
+    if (m.includes("moov") || m.includes("momo")) {
+      return (
+        <span className="px-2.5 py-1 text-xs font-bold rounded-lg bg-blue-100 text-blue-800 border border-blue-200">
+          Moov Money
+        </span>
+      );
+    }
+    if (m.includes("card") || m.includes("carte") || m.includes("stripe")) {
+      return (
+        <span className="px-2.5 py-1 text-xs font-bold rounded-lg bg-purple-100 text-purple-800 border border-purple-200">
+          Carte Bancaire
+        </span>
+      );
+    }
+    if (m.includes("cash") || m.includes("livraison")) {
+      return (
+        <span className="px-2.5 py-1 text-xs font-bold rounded-lg bg-emerald-100 text-emerald-800 border border-emerald-200">
+          À la livraison
+        </span>
+      );
+    }
+
+    return (
+      <span className="px-2.5 py-1 text-xs font-medium rounded-lg bg-gray-100 text-gray-700 border border-gray-200">
+        {method || "Non spécifié"}
+      </span>
+    );
+  };
 
   if (loading) {
     return (
@@ -187,7 +288,7 @@ function OrderList() {
   }
 
   return (
-    <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-6">
+    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6">
       {/* Affichage d'erreur */}
       {error && (
         <div className="p-4 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl flex items-center justify-between">
@@ -201,8 +302,8 @@ function OrderList() {
         </div>
       )}
 
-      {/* Top Header */}
-      <div className="flex items-center justify-between border-b border-gray-200 pb-4">
+      {/* Top Header avec Barre de Recherche */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-200 pb-4">
         <div>
           <h2 className="text-xl font-bold text-gray-900">
             Liste des Commandes
@@ -211,23 +312,71 @@ function OrderList() {
             Gérez et suivez l'état des dernières commandes récentes.
           </p>
         </div>
-        <span className="text-xs font-semibold px-3 py-1 bg-gray-100 text-gray-700 rounded-full border border-gray-200">
-          {orders.length} commande(s)
-        </span>
+
+        <div className="flex items-center gap-3">
+          {/* 👈 Champ de Recherche */}
+          <div className="relative w-full sm:w-72">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg
+                className="h-4 w-4 text-gray-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+            </div>
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Rechercher (N° CMD, Nom...)"
+              className="w-full pl-9 pr-8 py-2 text-sm bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+            />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm("")}
+                className="absolute inset-y-0 right-0 pr-2.5 flex items-center text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+
+          <span className="text-xs font-semibold px-3 py-2 bg-gray-100 text-gray-700 rounded-lg border border-gray-200 shrink-0">
+            {filteredOrders.length} / {orders.length}
+          </span>
+        </div>
       </div>
 
       {/* Container de la Liste */}
-      {orders.length === 0 ? (
-        <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
+      {filteredOrders.length === 0 ? (
+        <div className="text-center py-12 bg-white rounded-xl border border-gray-200 space-y-3">
           <p className="text-gray-500 text-sm">
-            Aucune commande enregistrée dans la base de données.
+            {searchTerm
+              ? `Aucune commande ne correspond à la recherche "${searchTerm}".`
+              : "Aucune commande enregistrée dans la base de données."}
           </p>
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm("")}
+              className="text-xs font-semibold text-indigo-600 hover:underline"
+            >
+              Effacer la recherche
+            </button>
+          )}
         </div>
       ) : (
         <div className="space-y-4">
-          {orders.map((order) => {
+          {filteredOrders.map((order) => {
             const orderId = order.order_number || `#${order.id}`;
             const amount = Number(order.total_amount || 0);
+            const isUnread = !order.is_read;
 
             const orderDate = order.created_at
               ? new Date(order.created_at).toLocaleDateString("fr-FR", {
@@ -242,39 +391,39 @@ function OrderList() {
               order.status?.toLowerCase() === "payé";
 
             const clientName =
-              order.user?.name || order.user?.username || "Client Anonyme";
+              order.full_name || order.user?.name || "Client Anonyme";
             const address = order.shipping_address || "Adresse non spécifiée";
             const city = order.city || "Abidjan";
             const phone = order.phone || "";
 
             const items = order.items || [];
-            
-            // Image du 1er article de la commande pour l'aperçu
             const firstItemImage = items.length > 0 ? getItemImage(items[0]) : null;
 
             return (
               <div
                 key={order.id}
-                className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200 p-5 grid grid-cols-1 md:grid-cols-12 gap-4 items-center"
+                onClick={() => handleMarkAsRead(order)}
+                className={`rounded-xl border transition-all duration-200 p-5 grid grid-cols-1 md:grid-cols-12 gap-4 items-center cursor-pointer ${
+                  isUnread
+                    ? "bg-blue-50/40 border-blue-300 shadow-sm hover:shadow-md ring-1 ring-blue-200"
+                    : "bg-white border-gray-200 shadow-sm hover:shadow-md"
+                }`}
               >
                 {/* 1. Image + Infos Produit / ID (Col 4) */}
                 <div className="md:col-span-4 flex items-center space-x-4">
-                  {/* Conteneur d'image */}
-                  <div className="w-14 h-14 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center shrink-0 overflow-hidden">
+                  <div className="w-14 h-14 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center shrink-0 overflow-hidden relative">
                     {firstItemImage ? (
                       <img
                         src={firstItemImage}
                         alt="Aperçu produit"
                         className="w-full h-full object-cover"
                         onError={(e) => {
-                          // Fallback si l'image ne charge pas
                           (e.target as HTMLElement).style.display = "none";
                           (e.target as HTMLElement).nextElementSibling?.classList.remove("hidden");
                         }}
                       />
                     ) : null}
 
-                    {/* Icône de fallback si pas d'image */}
                     <div className={`flex items-center justify-center ${firstItemImage ? "hidden" : ""}`}>
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -294,9 +443,17 @@ function OrderList() {
                   </div>
 
                   <div className="min-w-0 flex-1">
-                    <span className="text-xs font-mono font-bold text-indigo-600">
-                      {orderId}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-mono font-bold text-indigo-600">
+                        {orderId}
+                      </span>
+                      {isUnread && (
+                        <span className="bg-blue-600 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider animate-pulse">
+                          Nouveau
+                        </span>
+                      )}
+                    </div>
+
                     {items.length === 0 ? (
                       <p className="font-semibold text-gray-800 text-sm italic">
                         Aucun article
@@ -338,8 +495,16 @@ function OrderList() {
                   )}
                 </div>
 
-                {/* 3. Montant & Statut (Col 5) */}
-                <div className="md:col-span-5 flex items-center justify-between md:justify-end gap-4 border-t md:border-t-0 pt-3 md:pt-0 border-gray-100">
+                {/* 3. Moyen de Paiement (Col 2) */}
+                <div className="md:col-span-2 text-left md:text-center">
+                  <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1 block md:hidden">
+                    Paiement
+                  </p>
+                  {renderPaymentBadge(order.payment_method)}
+                </div>
+
+                {/* 4. Montant & Statut (Col 3) */}
+                <div className="md:col-span-3 flex items-center justify-between md:justify-end gap-3 border-t md:border-t-0 pt-3 md:pt-0 border-gray-100">
                   <div className="text-left md:text-right">
                     <p className="text-base font-bold text-gray-900">
                       {amount.toLocaleString("fr-FR")} FCFA

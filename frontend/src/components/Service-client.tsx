@@ -1,7 +1,4 @@
 import { useState } from "react";
-//import Header from "./Header";
-//import HeaderConnect from "./HeaderConnect";
-import Footer from "./Footer";
 import { 
   FaUndo, 
   FaPaperPlane, 
@@ -14,7 +11,6 @@ import {
   FaCloudUploadAlt 
 } from "react-icons/fa";
 
-// URL de base de l'API (ex: https://ton-back.onrender.com/api ou http://localhost:8000/api)
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
 
 function ContactReturns() {
@@ -22,7 +18,7 @@ function ContactReturns() {
     orderNumber: "",
     fullName: "",
     email: "",
-    reason: "defective", // defective, wrong_item, size_issue, other
+    reason: "defective",
     description: "",
   });
 
@@ -32,7 +28,7 @@ function ContactReturns() {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Helper pour récupérer le token XSRF si tu utilises Laravel Sanctum
+  // Helper pour récupérer le token XSRF (Laravel Sanctum)
   const getXsrfToken = () => {
     const cookies = document.cookie.split(";");
     for (let cookie of cookies) {
@@ -44,7 +40,9 @@ function ContactReturns() {
     return "";
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
@@ -57,12 +55,25 @@ function ContactReturns() {
     }
   };
 
+  const resetForm = () => {
+    setFormData({
+      orderNumber: "",
+      fullName: "",
+      email: "",
+      reason: "defective",
+      description: "",
+    });
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    setIsSubmitted(false);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     setErrorMessage(null);
 
-    // Construction du FormData pour l'envoi multipart (fichiers + textes)
+    // Construction du FormData avec les clés exactes attendues par Laravel
     const data = new FormData();
     data.append("orderNumber", formData.orderNumber);
     data.append("fullName", formData.fullName);
@@ -75,10 +86,14 @@ function ContactReturns() {
     }
 
     const xsrfToken = getXsrfToken();
+    const token = localStorage.getItem("token");
+
     const headers: Record<string, string> = {
       Accept: "application/json",
     };
+
     if (xsrfToken) headers["X-XSRF-TOKEN"] = xsrfToken;
+    if (token) headers["Authorization"] = `Bearer ${token}`;
 
     try {
       const response = await fetch(`${API_BASE_URL}/returns`, {
@@ -124,8 +139,6 @@ function ContactReturns() {
 
   return (
     <div className="bg-gradient-to-br from-slate-100 to-slate-200 min-h-screen flex flex-col text-slate-800">
-      {/* Header conditionnel */}
-      {/* {user ? <HeaderConnect user={user} /> : <Header />} */}
 
       {/* BANNIÈRE HERO */}
       <section className="bg-slate-900 text-white py-14 px-4 relative overflow-hidden">
@@ -161,7 +174,7 @@ function ContactReturns() {
         {/* FORMULAIRE ET COORDONNÉES */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
 
-          {/* FORMULAIRE DE RETOUR (2 Colonnes) */}
+          {/* FORMULAIRE DE RETOUR */}
           <div className="lg:col-span-2 bg-white rounded-2xl p-6 sm:p-8 border border-slate-200 shadow-sm">
             <h2 className="text-xl font-extrabold text-slate-900 mb-6 flex items-center gap-2">
               Formulaire de demande de retour
@@ -180,14 +193,10 @@ function ContactReturns() {
                 </div>
                 <h3 className="text-xl font-bold text-slate-900">Demande enregistrée avec succès !</h3>
                 <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto">
-                  Votre dossier de retour concernant la commande <strong>#{formData.orderNumber}</strong> a été transmis à notre service logistique. Vous recevrez un SMS/Email de confirmation très rapidement.
+                  Votre dossier de retour concernant la commande <strong>#{formData.orderNumber}</strong> a été transmis à notre service client. Nous vous contacterons très rapidement.
                 </p>
                 <button
-                  onClick={() => {
-                    setIsSubmitted(false);
-                    setSelectedFile(null);
-                    setPreviewUrl(null);
-                  }}
+                  onClick={resetForm}
                   className="mt-4 text-xs font-bold text-indigo-600 hover:underline"
                 >
                   Envoyer une autre demande
@@ -253,10 +262,10 @@ function ContactReturns() {
                       onChange={handleInputChange}
                       className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
                     >
-                      <option value="defective">Produit endommagé ou défectueux</option>
-                      <option value="wrong_item">Mauvais article reçu</option>
-                      <option value="size_issue">Problème de taille / pointure</option>
-                      <option value="other">Autre motif</option>
+                      <option value="Produit endommagé">Produit endommagé ou défectueux</option>
+                      <option value="Mauvais article">Mauvais article reçu</option>
+                      <option value="Problème de taille">Problème de taille / pointure</option>
+                      <option value="Autre">Autre motif</option>
                     </select>
                   </div>
                 </div>
@@ -305,7 +314,7 @@ function ContactReturns() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-sm py-3.5 rounded-xl transition-all shadow-md active:scale-95 disabled:opacity-50"
+                  className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-sm py-3.5 rounded-xl transition-all shadow-md active:scale-95 disabled:opacity-50 cursor-pointer"
                 >
                   {isSubmitting ? "Envoi en cours..." : "Soumettre la demande de retour"}
                 </button>
@@ -313,7 +322,7 @@ function ContactReturns() {
             )}
           </div>
 
-          {/* INFORMATIONS SUPPORTS EN DIRECT (1 Colonne) */}
+          {/* INFORMATIONS SUPPORT */}
           <div className="space-y-6">
             <div className="bg-slate-900 text-white rounded-2xl p-6 space-y-6 shadow-sm">
               <h3 className="font-bold text-lg border-b border-slate-800 pb-3">Besoin d'aide immédiate ?</h3>
@@ -362,8 +371,6 @@ function ContactReturns() {
         </div>
 
       </main>
-
-      <Footer />
     </div>
   );
 }

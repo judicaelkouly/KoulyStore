@@ -159,7 +159,7 @@ function UpdateProduct({ productToEdit, onCancel, onSuccess }: UpdateProductProp
       const fetchProduct = async () => {
         try {
           setLoading(true);
-          const response = await fetch(`${API_BASE_URL}/admin/products/${productId}`, {
+          const response = await fetch(`${API_BASE_URL}/products/${productId}`, {
             credentials: "include",
             headers: getAuthHeaders(),
           });
