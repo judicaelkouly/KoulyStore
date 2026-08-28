@@ -26,6 +26,10 @@ function ReturnList({ onReturnsUpdated }: ReturnListProps) {
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [updatingId, setUpdatingId] = useState<number | null>(null);
 
+  // 📄 GESTION DE LA PAGINATION (20 par page)
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const itemsPerPage = 20;
+
   // État pour la modale de détails
   const [selectedReturn, setSelectedReturn] = useState<ReturnRequest | null>(null);
 
@@ -154,6 +158,18 @@ function ReturnList({ onReturnsUpdated }: ReturnListProps) {
     );
   });
 
+  // 📄 CALCUL DES RETOURS POUR LA PAGE ACTIVE
+  const totalPages = Math.ceil(filteredReturns.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedReturns = filteredReturns.slice(startIndex, endIndex);
+
+  // Remise à la première page lors de la saisie d'une recherche
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    setCurrentPage(1);
+  };
+
   return (
     <div className="w-full relative">
       {/* Barre supérieure : Recherche */}
@@ -177,19 +193,23 @@ function ReturnList({ onReturnsUpdated }: ReturnListProps) {
           <input
             type="text"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => handleSearchChange(e.target.value)}
             placeholder="Rechercher par N° commande, client, motif..."
             className="w-full pl-9 pr-8 py-2 text-sm bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors shadow-sm"
           />
           {searchTerm && (
             <button
-              onClick={() => setSearchTerm("")}
+              onClick={() => handleSearchChange("")}
               className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 text-sm"
             >
               ✕
             </button>
           )}
         </div>
+
+        <span className="text-xs font-semibold px-3 py-2 bg-gray-100 text-gray-700 rounded-lg border border-gray-200 shrink-0">
+          {filteredReturns.length} / {returns.length}
+        </span>
       </div>
 
       {/* Message d'erreur */}
@@ -237,7 +257,7 @@ function ReturnList({ onReturnsUpdated }: ReturnListProps) {
                   </p>
                   {searchTerm && (
                     <button
-                      onClick={() => setSearchTerm("")}
+                      onClick={() => handleSearchChange("")}
                       className="text-xs font-semibold text-indigo-500 hover:underline"
                     >
                       Effacer la recherche
@@ -246,7 +266,7 @@ function ReturnList({ onReturnsUpdated }: ReturnListProps) {
                 </td>
               </tr>
             ) : (
-              filteredReturns.map((item) => {
+              paginatedReturns.map((item) => {
                 const { date, time } = formatDate(item.created_at);
 
                 return (
@@ -348,6 +368,42 @@ function ReturnList({ onReturnsUpdated }: ReturnListProps) {
         </table>
       </div>
 
+      {/* 📄 CONTRÔLES DE PAGINATION */}
+      {!loading && !error && filteredReturns.length > 0 && (
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6 pt-4 border-t border-gray-200">
+          <div>
+            <span className="text-sm text-gray-600">
+              Affichage de {startIndex + 1} à{" "}
+              {Math.min(endIndex, filteredReturns.length)} sur {filteredReturns.length} retour(s)
+            </span>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <button
+              type="button"
+              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-1.5 rounded-md bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-sm transition"
+            >
+              Précédent
+            </button>
+
+            <span className="text-sm text-gray-700 font-medium px-2">
+              Page {currentPage} sur {totalPages || 1}
+            </span>
+
+            <button
+              type="button"
+              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+              disabled={currentPage >= totalPages}
+              className="px-3 py-1.5 rounded-md bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-sm transition"
+            >
+              Suivant
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* MODALE / POPUP DE DÉTAILS DU RETOUR */}
       {selectedReturn && (
         <div 
@@ -412,7 +468,7 @@ function ReturnList({ onReturnsUpdated }: ReturnListProps) {
             {selectedReturn.image_path ? (
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <p className="text-xs text-gray-400 font-bold uppercase">Photo de preuve joingne</p>
+                  <p className="text-xs text-gray-400 font-bold uppercase">Photo de preuve jointe</p>
                   <a
                     href={`${STORAGE_BASE_URL}/storage/${selectedReturn.image_path}`}
                     target="_blank"

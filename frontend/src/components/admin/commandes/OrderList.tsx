@@ -66,8 +66,15 @@ function OrderList({ onOrdersUpdated }: OrderListProps) {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   
-  // 👈 État pour la barre de recherche
+  // État pour la barre de recherche
   const [searchTerm, setSearchTerm] = useState<string>("");
+
+  // 📄 GESTION DE LA PAGINATION (20 par page)
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const itemsPerPage = 20;
+
+  // État pour la modale de détails de la commande
+  const [selectedOrder, setSelectedOrder] = useState<OrderData | null>(null);
 
   // Helper pour formater et valider les URLs d'images Laravel
   const formatImageUrl = (pathCandidate?: any): string | null => {
@@ -185,37 +192,39 @@ function OrderList({ onOrdersUpdated }: OrderListProps) {
 
   // Marquer une commande comme lue au clic
   const handleMarkAsRead = async (order: OrderData) => {
-    if (order.is_read) return;
+    if (!order.is_read) {
+      try {
+        const xsrfToken = getXsrfToken();
+        const headers: Record<string, string> = {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        };
+        if (xsrfToken) headers["X-XSRF-TOKEN"] = xsrfToken;
 
-    try {
-      const xsrfToken = getXsrfToken();
-      const headers: Record<string, string> = {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      };
-      if (xsrfToken) headers["X-XSRF-TOKEN"] = xsrfToken;
+        await fetch(`${API_BASE_URL}/admin/orders/${order.id}/read`, {
+          method: "PATCH",
+          headers,
+          credentials: "include",
+        });
 
-      await fetch(`${API_BASE_URL}/admin/orders/${order.id}/read`, {
-        method: "PATCH",
-        headers,
-        credentials: "include",
-      });
+        // Mettre à jour l'état local
+        setOrders((prev) =>
+          prev.map((o) => (o.id === order.id ? { ...o, is_read: true } : o))
+        );
 
-      // Mettre à jour l'état local
-      setOrders((prev) =>
-        prev.map((o) => (o.id === order.id ? { ...o, is_read: true } : o))
-      );
-
-      // Notifier le composant parent
-      if (onOrdersUpdated) {
-        onOrdersUpdated();
+        // Notifier le composant parent
+        if (onOrdersUpdated) {
+          onOrdersUpdated();
+        }
+      } catch (err) {
+        console.error("Erreur marquage commande comme lue:", err);
       }
-    } catch (err) {
-      console.error("Erreur marquage commande comme lue:", err);
     }
+
+    setSelectedOrder(order);
   };
 
-  // 👈 Filtrage en temps réel selon le numéro de commande, nom ou téléphone
+  // Filtrage en temps réel selon le numéro de commande, nom ou téléphone
   const filteredOrders = orders.filter((order) => {
     const query = searchTerm.trim().toLowerCase();
     if (!query) return true;
@@ -230,6 +239,18 @@ function OrderList({ onOrdersUpdated }: OrderListProps) {
       phone.includes(query)
     );
   });
+
+  // 📄 CALCUL DES COMMANDES POUR LA PAGE ACTIVE
+  const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedOrders = filteredOrders.slice(startIndex, endIndex);
+
+  // Remise à la première page lors d'une recherche
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    setCurrentPage(1);
+  };
 
   // Badge du moyen de paiement
   const renderPaymentBadge = (method?: string) => {
@@ -249,10 +270,10 @@ function OrderList({ onOrdersUpdated }: OrderListProps) {
         </span>
       );
     }
-    if (m.includes("moov") || m.includes("momo")) {
+    if (m.includes("mtn") || m.includes("momo")) {
       return (
-        <span className="px-2.5 py-1 text-xs font-bold rounded-lg bg-blue-100 text-blue-800 border border-blue-200">
-          Moov Money
+        <span className="px-2.5 py-1 text-xs font-bold rounded-lg bg-yellow-100 text-yellow-800 border border-blue-200">
+          MTN Money
         </span>
       );
     }
@@ -288,7 +309,7 @@ function OrderList({ onOrdersUpdated }: OrderListProps) {
   }
 
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6">
+    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6 relative">
       {/* Affichage d'erreur */}
       {error && (
         <div className="p-4 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl flex items-center justify-between">
@@ -314,7 +335,7 @@ function OrderList({ onOrdersUpdated }: OrderListProps) {
         </div>
 
         <div className="flex items-center gap-3">
-          {/* 👈 Champ de Recherche */}
+          {/* Champ de Recherche */}
           <div className="relative w-full sm:w-72">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <svg
@@ -334,13 +355,13 @@ function OrderList({ onOrdersUpdated }: OrderListProps) {
             <input
               type="text"
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => handleSearchChange(e.target.value)}
               placeholder="Rechercher (N° CMD, Nom...)"
               className="w-full pl-9 pr-8 py-2 text-sm bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
             />
             {searchTerm && (
               <button
-                onClick={() => setSearchTerm("")}
+                onClick={() => handleSearchChange("")}
                 className="absolute inset-y-0 right-0 pr-2.5 flex items-center text-gray-400 hover:text-gray-600"
               >
                 ✕
@@ -364,7 +385,7 @@ function OrderList({ onOrdersUpdated }: OrderListProps) {
           </p>
           {searchTerm && (
             <button
-              onClick={() => setSearchTerm("")}
+              onClick={() => handleSearchChange("")}
               className="text-xs font-semibold text-indigo-600 hover:underline"
             >
               Effacer la recherche
@@ -373,7 +394,8 @@ function OrderList({ onOrdersUpdated }: OrderListProps) {
         </div>
       ) : (
         <div className="space-y-4">
-          {filteredOrders.map((order) => {
+          {/* Rendu dynamique des 20 commandes paginées */}
+          {paginatedOrders.map((order) => {
             const orderId = order.order_number || `#${order.id}`;
             const amount = Number(order.total_amount || 0);
             const isUnread = !order.is_read;
@@ -406,12 +428,12 @@ function OrderList({ onOrdersUpdated }: OrderListProps) {
                 className={`rounded-xl border transition-all duration-200 p-5 grid grid-cols-1 md:grid-cols-12 gap-4 items-center cursor-pointer ${
                   isUnread
                     ? "bg-blue-50/40 border-blue-300 shadow-sm hover:shadow-md ring-1 ring-blue-200"
-                    : "bg-white border-gray-200 shadow-sm hover:shadow-md"
+                    : "bg-white border-gray-200 shadow-sm hover:shadow-md hover:bg-gray-50/50"
                 }`}
               >
-                {/* 1. Image + Infos Produit / ID (Col 4) */}
-                <div className="md:col-span-4 flex items-center space-x-4">
-                  <div className="w-14 h-14 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center shrink-0 overflow-hidden relative">
+                {/* 1. Image + Infos Produit / ID (Col 5) */}
+                <div className="md:col-span-5 flex items-center space-x-4">
+                  <div className="w-20 h-20 rounded-xl bg-gray-100 border border-gray-200 flex items-center justify-center shrink-0 overflow-hidden relative shadow-xs">
                     {firstItemImage ? (
                       <img
                         src={firstItemImage}
@@ -427,7 +449,7 @@ function OrderList({ onOrdersUpdated }: OrderListProps) {
                     <div className={`flex items-center justify-center ${firstItemImage ? "hidden" : ""}`}>
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
-                        className="h-6 w-6 text-gray-400"
+                        className="h-8 w-8 text-gray-400"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
@@ -435,14 +457,14 @@ function OrderList({ onOrdersUpdated }: OrderListProps) {
                         <path
                           strokeLinecap="round"
                           strokeLinejoin="round"
-                          strokeWidth={2}
+                          strokeWidth={1.5}
                           d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
                         />
                       </svg>
                     </div>
                   </div>
 
-                  <div className="min-w-0 flex-1">
+                  <div className="min-w-0 flex-1 space-y-1">
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-mono font-bold text-indigo-600">
                         {orderId}
@@ -460,25 +482,24 @@ function OrderList({ onOrdersUpdated }: OrderListProps) {
                       </p>
                     ) : (
                       items.map((item, idx) => (
-                        <p
-                          key={item.id || idx}
-                          className="font-semibold text-gray-800 text-sm truncate"
-                        >
-                          {item.product_title}
+                        <div key={item.id || idx} className="flex items-center flex-wrap gap-1.5 text-sm">
+                          <span className="font-semibold text-gray-800 truncate">
+                            {item.product_title}
+                          </span>
                           {item.quantity > 1 && (
-                            <span className="ml-2 text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">
+                            <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100">
                               x{item.quantity}
                             </span>
                           )}
                           {item.size && (
-                            <span className="ml-1.5 text-xs text-gray-500 font-normal">
-                              ({item.size})
+                            <span className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md">
+                              Taille: {item.size}
                             </span>
                           )}
-                        </p>
+                        </div>
                       ))
                     )}
-                    <p className="text-xs text-gray-400 mt-0.5">{orderDate}</p>
+                    <p className="text-xs text-gray-400">{orderDate}</p>
                   </div>
                 </div>
 
@@ -503,31 +524,198 @@ function OrderList({ onOrdersUpdated }: OrderListProps) {
                   {renderPaymentBadge(order.payment_method)}
                 </div>
 
-                {/* 4. Montant & Statut (Col 3) */}
-                <div className="md:col-span-3 flex items-center justify-between md:justify-end gap-3 border-t md:border-t-0 pt-3 md:pt-0 border-gray-100">
+                {/* 4. Montant & Statut (Col 2) */}
+                <div className="md:col-span-2 flex items-center justify-between md:justify-end gap-3 border-t md:border-t-0 pt-3 md:pt-0 border-gray-100">
                   <div className="text-left md:text-right">
                     <p className="text-base font-bold text-gray-900">
                       {amount.toLocaleString("fr-FR")} FCFA
                     </p>
-                  </div>
-
-                  <div>
-                    {isPaid ? (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                        Payé
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full bg-amber-50 text-amber-700 border border-amber-200">
-                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                        En attente
-                      </span>
-                    )}
+                    <div className="mt-1">
+                      {isPaid ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 text-[11px] font-semibold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                          Payé
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 text-[11px] font-semibold rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                          En attente
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* 📄 CONTRÔLES DE PAGINATION */}
+      {!loading && !error && filteredOrders.length > 0 && (
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6 pt-4 border-t border-gray-200">
+          <div>
+            <span className="text-sm text-gray-600">
+              Affichage de {startIndex + 1} à{" "}
+              {Math.min(endIndex, filteredOrders.length)} sur {filteredOrders.length} commande(s)
+            </span>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <button
+              type="button"
+              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-1.5 rounded-md bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-sm transition"
+            >
+              Précédent
+            </button>
+
+            <span className="text-sm text-gray-700 font-medium px-2">
+              Page {currentPage} sur {totalPages || 1}
+            </span>
+
+            <button
+              type="button"
+              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+              disabled={currentPage >= totalPages}
+              className="px-3 py-1.5 rounded-md bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-sm transition"
+            >
+              Suivant
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* MODALE DÉTAILS DE LA COMMANDE */}
+      {selectedOrder && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4"
+          onClick={() => setSelectedOrder(null)}
+        >
+          <div
+            className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-6 relative max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Bouton de Fermeture */}
+            <button
+              onClick={() => setSelectedOrder(null)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition"
+            >
+              ✕
+            </button>
+
+            {/* En-tête Modale */}
+            <div className="border-b border-gray-200 pb-4">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-full uppercase">
+                  Détails Commande
+                </span>
+                {selectedOrder.status?.toLowerCase() === "paid" || selectedOrder.status?.toLowerCase() === "payé" ? (
+                  <span className="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full">
+                    Payé
+                  </span>
+                ) : (
+                  <span className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1 rounded-full">
+                    En attente
+                  </span>
+                )}
+              </div>
+              <h3 className="text-2xl font-extrabold text-gray-900 mt-2">
+                {selectedOrder.order_number || `#${selectedOrder.id}`}
+              </h3>
+              <p className="text-xs text-gray-500 mt-0.5">
+                Passée le {selectedOrder.created_at ? new Date(selectedOrder.created_at).toLocaleString("fr-FR") : "-"}
+              </p>
+            </div>
+
+            {/* Informations Client & Livraison */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-xl border border-gray-200">
+              <div>
+                <p className="text-xs text-gray-400 font-bold uppercase">Client</p>
+                <p className="text-sm font-bold text-gray-800 mt-0.5">
+                  {selectedOrder.full_name || selectedOrder.user?.name || "Client Anonyme"}
+                </p>
+                {selectedOrder.phone && (
+                  <p className="text-xs font-mono text-gray-600 mt-1">📞 {selectedOrder.phone}</p>
+                )}
+              </div>
+              <div>
+                <p className="text-xs text-gray-400 font-bold uppercase">Adresse de Livraison</p>
+                <p className="text-sm font-bold text-gray-800 mt-0.5">{selectedOrder.shipping_address || "Non renseignée"}</p>
+                <p className="text-xs text-gray-600 mt-0.5">{selectedOrder.city || "Abidjan"}</p>
+              </div>
+            </div>
+
+            {/* Moyen de Paiement */}
+            <div className="flex items-center justify-between bg-gray-50 p-4 rounded-xl border border-gray-200">
+              <span className="text-xs font-bold text-gray-500 uppercase">Moyen de Paiement</span>
+              <div>{renderPaymentBadge(selectedOrder.payment_method)}</div>
+            </div>
+
+            {/* Articles Commandés */}
+            <div className="space-y-3">
+              <p className="text-xs text-gray-400 font-bold uppercase">Articles Commandés</p>
+              <div className="space-y-3">
+                {(selectedOrder.items || []).map((item, idx) => {
+                  const img = getItemImage(item);
+                  const price = Number(item.unit_price || 0);
+
+                  return (
+                    <div
+                      key={item.id || idx}
+                      className="flex items-center gap-4 bg-white p-3 rounded-xl border border-gray-200 shadow-2xs"
+                    >
+                      <div className="w-20 h-20 rounded-lg bg-gray-100 border border-gray-200 shrink-0 overflow-hidden relative">
+                        {img ? (
+                          <img
+                            src={img}
+                            alt={item.product_title}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
+                            Pas d'image
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-gray-800 text-sm">{item.product_title}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-xs text-gray-500 font-medium">
+                            Quantité: <strong className="text-gray-800">{item.quantity}</strong>
+                          </span>
+                          {item.size && (
+                            <span className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md">
+                              Taille: {item.size}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-indigo-600 font-semibold mt-1">
+                          {price.toLocaleString("fr-FR")} FCFA / unité
+                        </p>
+                      </div>
+
+                      <div className="text-right">
+                        <p className="text-sm font-extrabold text-gray-900">
+                          {(price * item.quantity).toLocaleString("fr-FR")} FCFA
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Pied de Modale : Total */}
+            <div className="pt-4 border-t border-gray-200 flex items-center justify-between">
+              <span className="text-base font-extrabold text-gray-900">Total de la commande</span>
+              <span className="text-xl font-extrabold text-indigo-600">
+                {Number(selectedOrder.total_amount || 0).toLocaleString("fr-FR")} FCFA
+              </span>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -18,8 +18,12 @@ function CategoryList() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // 👈 État pour la barre de recherche
+  // État pour la barre de recherche
   const [searchTerm, setSearchTerm] = useState<string>("");
+
+  // 📄 GESTION DE LA PAGINATION (20 par page)
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const itemsPerPage = 20;
 
   // Helper pour récupérer le token XSRF des cookies (Laravel Sanctum)
   const getXsrfToken = () => {
@@ -98,10 +102,22 @@ function CategoryList() {
     }
   };
 
-  // 👈 Filtrage dynamique des catégories par nom
+  // Filtrage dynamique des catégories par nom
   const filteredCategories = categories.filter((category) =>
     category.name.toLowerCase().includes(searchTerm.trim().toLowerCase())
   );
+
+  // 📄 CALCUL DES CATÉGORIES POUR LA PAGE ACTIVE
+  const totalPages = Math.ceil(filteredCategories.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedCategories = filteredCategories.slice(startIndex, endIndex);
+
+  // Remise à la première page lors de la saisie d'une recherche
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    setCurrentPage(1);
+  };
 
   // Helper dynamique pour construire l'URL de l'image
   const getImageUrl = (category: Category) => {
@@ -150,7 +166,7 @@ function CategoryList() {
           </Link>
         </div>
 
-        {/* 👈 Champ de Recherche */}
+        {/* Champ de Recherche */}
         <div className="relative w-full md:w-72">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <svg
@@ -170,13 +186,13 @@ function CategoryList() {
           <input
             type="text"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => handleSearchChange(e.target.value)}
             placeholder="Rechercher une catégorie..."
             className="w-full pl-9 pr-8 py-2 text-sm bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
           />
           {searchTerm && (
             <button
-              onClick={() => setSearchTerm("")}
+              onClick={() => handleSearchChange("")}
               className="absolute inset-y-0 right-0 pr-2.5 flex items-center text-gray-400 hover:text-gray-600"
             >
               ✕
@@ -191,6 +207,7 @@ function CategoryList() {
         </div>
       )}
 
+      {/* Tableau d'affichage */}
       <div className="overflow-x-auto bg-white rounded-lg shadow">
         <table className="w-full table-auto">
           <thead>
@@ -218,7 +235,7 @@ function CategoryList() {
                   </p>
                   {searchTerm && (
                     <button
-                      onClick={() => setSearchTerm("")}
+                      onClick={() => handleSearchChange("")}
                       className="text-xs font-semibold text-blue-500 hover:underline"
                     >
                       Effacer la recherche
@@ -227,7 +244,8 @@ function CategoryList() {
                 </td>
               </tr>
             ) : (
-              filteredCategories.map((category) => (
+              /* Rendu dynamique des 20 catégories paginées */
+              paginatedCategories.map((category) => (
                 <tr
                   key={category.id}
                   className="border-b border-gray-200 hover:bg-gray-100 transition-colors"
@@ -297,6 +315,42 @@ function CategoryList() {
           </tbody>
         </table>
       </div>
+
+      {/* 📄 CONTRÔLES DE PAGINATION */}
+      {!loading && !error && filteredCategories.length > 0 && (
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6">
+          <div>
+            <span className="text-sm text-gray-600">
+              Affichage de {filteredCategories.length > 0 ? startIndex + 1 : 0} à{" "}
+              {Math.min(endIndex, filteredCategories.length)} sur {filteredCategories.length} catégorie(s)
+            </span>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <button
+              type="button"
+              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-1.5 rounded-md bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-sm transition"
+            >
+              Précédent
+            </button>
+
+            <span className="text-sm text-gray-700 font-medium px-2">
+              Page {currentPage} sur {totalPages || 1}
+            </span>
+
+            <button
+              type="button"
+              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+              disabled={currentPage >= totalPages}
+              className="px-3 py-1.5 rounded-md bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-sm transition"
+            >
+              Suivant
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

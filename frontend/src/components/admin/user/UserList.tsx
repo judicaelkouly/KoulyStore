@@ -21,8 +21,12 @@ function UserList() {
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<number | string | null>(null);
 
-  // 👈 État pour la barre de recherche
+  // État pour la barre de recherche
   const [searchTerm, setSearchTerm] = useState<string>("");
+
+  // 📄 GESTION DE LA PAGINATION (20 par page)
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const itemsPerPage = 20;
 
   // Helper pour récupérer le token XSRF dans les cookies (Laravel Sanctum)
   const getXsrfToken = (): string => {
@@ -117,7 +121,7 @@ function UserList() {
     }
   };
 
-  // 👈 Filtrage dynamique multicritère
+  // Filtrage dynamique multicritère
   const filteredUsers = users.filter((user) => {
     const query = searchTerm.trim().toLowerCase();
     if (!query) return true;
@@ -137,6 +141,18 @@ function UserList() {
     );
   });
 
+  // 📄 CALCUL DES UTILISATEURS POUR LA PAGE ACTIVE
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedUsers = filteredUsers.slice(startIndex, endIndex);
+
+  // Remise à la première page lors d'une nouvelle recherche
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    setCurrentPage(1);
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-4xl font-bold text-center mb-8 text-white">UserList</h1>
@@ -152,7 +168,7 @@ function UserList() {
           </a>
         </div>
 
-        {/* 👈 Champ de Recherche */}
+        {/* Champ de Recherche */}
         <div className="relative w-full md:w-80">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <svg
@@ -172,13 +188,13 @@ function UserList() {
           <input
             type="text"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => handleSearchChange(e.target.value)}
             placeholder="Rechercher par nom, email, rôle..."
             className="w-full pl-9 pr-8 py-2 text-sm bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors shadow-sm"
           />
           {searchTerm && (
             <button
-              onClick={() => setSearchTerm("")}
+              onClick={() => handleSearchChange("")}
               className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 text-sm"
             >
               ✕
@@ -230,7 +246,7 @@ function UserList() {
                   </p>
                   {searchTerm && (
                     <button
-                      onClick={() => setSearchTerm("")}
+                      onClick={() => handleSearchChange("")}
                       className="text-xs font-semibold text-blue-500 hover:underline"
                     >
                       Effacer la recherche
@@ -239,7 +255,7 @@ function UserList() {
                 </td>
               </tr>
             ) : (
-              filteredUsers.map((user) => {
+              paginatedUsers.map((user) => {
                 const fullName = user.username || user.name || "N/A";
                 const phone = user.phone || user.number || "N/A";
                 const address = user.address || (user.city ? `${user.city}` : "N/A");
@@ -328,6 +344,42 @@ function UserList() {
           </tbody>
         </table>
       </div>
+
+      {/* 📄 CONTRÔLES DE PAGINATION */}
+      {!loading && !error && filteredUsers.length > 0 && (
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6 pt-4 border-t border-gray-200 bg-white/10 p-4 rounded-lg">
+          <div>
+            <span className="text-sm text-white">
+              Affichage de {startIndex + 1} à{" "}
+              {Math.min(endIndex, filteredUsers.length)} sur {filteredUsers.length} utilisateur(s)
+            </span>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <button
+              type="button"
+              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-1.5 rounded-md bg-blue-500 hover:bg-blue-400 disabled:bg-gray-400 disabled:cursor-not-allowed text-white text-sm font-semibold transition"
+            >
+              Précédent
+            </button>
+
+            <span className="text-sm text-white font-medium px-2">
+              Page {currentPage} sur {totalPages || 1}
+            </span>
+
+            <button
+              type="button"
+              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+              disabled={currentPage >= totalPages}
+              className="px-3 py-1.5 rounded-md bg-blue-500 hover:bg-blue-400 disabled:bg-gray-400 disabled:cursor-not-allowed text-white text-sm font-semibold transition"
+            >
+              Suivant
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

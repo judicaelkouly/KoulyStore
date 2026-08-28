@@ -255,7 +255,7 @@ function Dashboard() {
               {loadingBanners ? (
                 <div className="h-full w-full flex items-center justify-center text-white/70 text-sm">
                   <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-white border-t-transparent mr-3"></div>
-                  Chargement des bannières...
+                  Chargement de nouvelles bannières...
                 </div>
               ) : banners.length === 0 ? (
                 <div className="h-full w-full flex items-center justify-center text-white/70 text-sm">
@@ -442,7 +442,7 @@ function Dashboard() {
                         } hover:shadow-md transition-all duration-300 rounded-xl p-2.5 flex flex-col justify-between w-36 shrink-0 cursor-pointer`}
                       >
                         <div className="flex items-center justify-between mb-2">
-                          <span
+                          {/* <span
                             className={`${
                               isSelected
                                 ? "bg-indigo-600 text-white"
@@ -450,7 +450,7 @@ function Dashboard() {
                             } text-[10px] font-bold px-2 py-0.5 rounded-md border border-indigo-100/50`}
                           >
                             {cat.promo || "Populaire"}
-                          </span>
+                          </span> */}
                           <button
                             type="button"
                             onClick={(e) => {

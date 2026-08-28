@@ -5,7 +5,7 @@ import UserList from "./user/UserList";
 import OrderList from "./commandes/OrderList";
 import CategoryList from "./categories/CategoryList";
 import BannerList from "./bannieres/BannerList";
-import ReturnList from "./returns/ReturnList"; // 👈 Composant de gestion des retours
+import ReturnList from "./returns/ReturnList";
 
 import { 
   FaChartBar, 
@@ -15,13 +15,15 @@ import {
   FaDollarSign, 
   FaSignOutAlt, 
   FaReceipt,
-  FaUndoAlt // 👈 Icône pour les retours
+  FaUndoAlt 
 } from "react-icons/fa";
 import { MdOutlineProductionQuantityLimits } from "react-icons/md";
 import { TbCategoryPlus } from "react-icons/tb";
 import { PiFlagBannerFoldFill } from "react-icons/pi";
 
-// Interfaces pour le typage des réponses API
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
+const API_HOST_URL = API_BASE_URL.replace(/\/api\/?$/, "");
+
 interface OrderSummary {
   id: number;
   total_amount: string | number;
@@ -52,9 +54,10 @@ function AdminPage() {
   const [totalRevenue, setTotalRevenue] = useState<number>(0);
   const [totalOrdersCount, setTotalOrdersCount] = useState<number>(0);
   const [unreadOrdersCount, setUnreadOrdersCount] = useState<number>(0);
-  const [pendingReturnsCount, setPendingReturnsCount] = useState<number>(0); // 👈 Compteur des retours en attente
+  const [pendingReturnsCount, setPendingReturnsCount] = useState<number>(0);
   const [totalUsersCount, setTotalUsersCount] = useState<number>(0);
   const [totalProductsCount, setTotalProductsCount] = useState<number>(0);
+  const [totalCategoriesCount, setTotalCategoriesCount] = useState<number>(0); // 👈 Nouveau KPI
   const [loadingKpis, setLoadingKpis] = useState<boolean>(true);
 
   // État pour l'utilisateur admin actuellement connecté
@@ -93,13 +96,14 @@ function AdminPage() {
     if (xsrfToken) headers["X-XSRF-TOKEN"] = xsrfToken;
 
     try {
-      const [ordersRes, unreadRes, returnsRes, usersRes, productsRes, profileRes] = await Promise.allSettled([
-        fetch("http://localhost:8000/api/admin/orders", { headers, credentials: "include" }),
-        fetch("http://localhost:8000/api/admin/orders/unread-count", { headers, credentials: "include" }),
-        fetch("http://localhost:8000/api/admin/returns", { headers, credentials: "include" }), // 👈 API retours
-        fetch("http://localhost:8000/api/users", { headers, credentials: "include" }),
-        fetch("http://localhost:8000/api/products", { headers, credentials: "include" }),
-        fetch("http://localhost:8000/api/profile", { headers, credentials: "include" }),
+      const [ordersRes, unreadRes, returnsRes, usersRes, productsRes, categoriesRes, profileRes] = await Promise.allSettled([
+        fetch(`${API_BASE_URL}/admin/orders`, { headers, credentials: "include" }),
+        fetch(`${API_BASE_URL}/admin/orders/unread-count`, { headers, credentials: "include" }),
+        fetch(`${API_BASE_URL}/admin/returns`, { headers, credentials: "include" }),
+        fetch(`${API_BASE_URL}/users`, { headers, credentials: "include" }),
+        fetch(`${API_BASE_URL}/products`, { headers, credentials: "include" }),
+        fetch(`${API_BASE_URL}/categories`, { headers, credentials: "include" }), // 👈 API Catégories
+        fetch(`${API_BASE_URL}/profile`, { headers, credentials: "include" }),
       ]);
 
       if (ordersRes.status === "fulfilled" && ordersRes.value.ok) {
@@ -121,7 +125,6 @@ function AdminPage() {
         setUnreadOrdersCount(unreadData.count || 0);
       }
 
-      // Traitement des retours en attente
       if (returnsRes.status === "fulfilled" && returnsRes.value.ok) {
         const returnsData = await returnsRes.value.json();
         const returnsList: ReturnSummary[] = Array.isArray(returnsData)
@@ -148,6 +151,15 @@ function AdminPage() {
         setTotalProductsCount(productsList.length);
       }
 
+      // Traitement du total des catégories
+      if (categoriesRes.status === "fulfilled" && categoriesRes.value.ok) {
+        const categoriesData = await categoriesRes.value.json();
+        const categoriesList: ItemSummary[] = Array.isArray(categoriesData)
+          ? categoriesData
+          : categoriesData.categories || categoriesData.data || [];
+        setTotalCategoriesCount(categoriesList.length);
+      }
+
       if (profileRes.status === "fulfilled" && profileRes.value.ok) {
         const profileData = await profileRes.value.json();
         const userData = profileData.user || profileData.data || profileData;
@@ -165,7 +177,6 @@ function AdminPage() {
     fetchDashboardStats();
   }, []);
 
-  // Fonction de déconnexion
   const handleLogout = async () => {
     const xsrfToken = getXsrfToken();
     const headers: Record<string, string> = {
@@ -175,7 +186,7 @@ function AdminPage() {
     if (xsrfToken) headers["X-XSRF-TOKEN"] = xsrfToken;
 
     try {
-      const response = await fetch("http://localhost:8000/api/logout", {
+      const response = await fetch(`${API_BASE_URL}/logout`, {
         method: "POST",
         headers,
         credentials: "include",
@@ -197,7 +208,7 @@ function AdminPage() {
     { id: "products", label: "Products", icon: <MdOutlineProductionQuantityLimits /> },
     { id: "categories", label: "Categories", icon: <TbCategoryPlus /> },
     { id: "orders", label: "Orders", icon: <FaReceipt />, badge: unreadOrdersCount },
-    { id: "returns", label: "Retours", icon: <FaUndoAlt />, badge: pendingReturnsCount }, // 👈 Nouvel onglet
+    { id: "returns", label: "Retours", icon: <FaUndoAlt />, badge: pendingReturnsCount },
     { id: "banner", label: "Bannière", icon: <PiFlagBannerFoldFill /> },
     { id: "analytics", label: "Analytics", icon: <FaChartBar /> },
   ];
@@ -206,95 +217,117 @@ function AdminPage() {
     switch (activeTab) {
       case "dashboard":
         return (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all duration-200 hover:-translate-y-0.5">
+          /* Grille ajustée à 6 colonnes sur grands écrans */
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
+            {/* 1. Revenu Total */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition-all duration-200 hover:-translate-y-0.5">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-                  <p className="text-xl font-bold text-gray-900 mt-2">
-                    {loadingKpis ? "..." : `${totalRevenue.toLocaleString("fr-FR")} FCFA`}
+                <div className="overflow-hidden">
+                  <p className="text-xs font-semibold text-gray-500 truncate">Chiffre d'affaires</p>
+                  <p className="text-lg font-bold text-gray-900 mt-1 truncate" title={`${totalRevenue.toLocaleString("fr-FR")} FCFA`}>
+                    {loadingKpis ? "..." : `${totalRevenue.toLocaleString("fr-FR")} F`}
                   </p>
-                  <div className="flex items-center mt-2">
-                    <span className="text-green-600 text-sm font-medium flex items-center">
-                      ↑ 12%
-                    </span>
-                    <span className="text-gray-500 text-xs ml-2">vs le mois dernier</span>
-                  </div>
                 </div>
-                <div className="w-12 h-12 bg-blue-50 text-indigo-600 rounded-lg flex items-center justify-center">
-                  <FaDollarSign className="text-xl" />
+                <div className="w-10 h-10 bg-blue-50 text-indigo-600 rounded-lg flex items-center justify-center shrink-0">
+                  <FaDollarSign className="text-lg" />
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all duration-200 hover:-translate-y-0.5">
+            {/* 2. Utilisateurs */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition-all duration-200 hover:-translate-y-0.5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Total Users</p>
-                  <p className="text-3xl font-bold text-gray-900 mt-2">
+                  <p className="text-xs font-semibold text-gray-500 truncate">Utilisateurs</p>
+                  <p className="text-2xl font-bold text-gray-900 mt-1">
                     {loadingKpis ? "..." : totalUsersCount.toLocaleString("fr-FR")}
                   </p>
-                  <div className="flex items-center mt-2">
-                    <span className="text-green-600 text-sm font-medium flex items-center">
-                      ↑ 8%
-                    </span>
-                    <span className="text-gray-500 text-xs ml-2">vs le mois dernier</span>
-                  </div>
                 </div>
-                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                  <FaUsers className="text-green-600 text-xl" />
+                <div className="w-10 h-10 bg-green-100 text-green-600 rounded-lg flex items-center justify-center shrink-0">
+                  <FaUsers className="text-lg" />
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all duration-200 hover:-translate-y-0.5">
+            {/* 3. Produits */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition-all duration-200 hover:-translate-y-0.5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Total Orders</p>
-                  <p className="text-3xl font-bold text-gray-900 mt-2">
+                  <p className="text-xs font-semibold text-gray-500 truncate">Produits</p>
+                  <p className="text-2xl font-bold text-gray-900 mt-1">
+                    {loadingKpis ? "..." : totalProductsCount.toLocaleString("fr-FR")}
+                  </p>
+                </div>
+                <div className="w-10 h-10 bg-purple-100 text-purple-600 rounded-lg flex items-center justify-center shrink-0">
+                  <MdOutlineProductionQuantityLimits className="text-lg" />
+                </div>
+              </div>
+            </div>
+
+            {/* 4. Catégories */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition-all duration-200 hover:-translate-y-0.5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-semibold text-gray-500 truncate">Catégories</p>
+                  <p className="text-2xl font-bold text-gray-900 mt-1">
+                    {loadingKpis ? "..." : totalCategoriesCount.toLocaleString("fr-FR")}
+                  </p>
+                </div>
+                <div className="w-10 h-10 bg-teal-100 text-teal-600 rounded-lg flex items-center justify-center shrink-0">
+                  <TbCategoryPlus className="text-lg" />
+                </div>
+              </div>
+            </div>
+
+            {/* 5. Commandes */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition-all duration-200 hover:-translate-y-0.5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-semibold text-gray-500 truncate">Commandes</p>
+                  <p className="text-2xl font-bold text-gray-900 mt-1">
                     {loadingKpis ? "..." : totalOrdersCount.toLocaleString("fr-FR")}
                   </p>
-                  <div className="flex items-center mt-2">
-                    {unreadOrdersCount > 0 ? (
-                      <span className="text-red-600 text-sm font-bold flex items-center">
-                        ● {unreadOrdersCount} nouvelle{unreadOrdersCount > 1 ? "s" : ""} commande{unreadOrdersCount > 1 ? "s" : ""}
-                      </span>
-                    ) : (
-                      <span className="text-green-600 text-sm font-medium flex items-center">
-                        À jour
-                      </span>
-                    )}
-                  </div>
                 </div>
-                <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                  <FaReceipt className="text-orange-600 text-xl" />
+                <div className="w-10 h-10 bg-orange-100 text-orange-600 rounded-lg flex items-center justify-center shrink-0">
+                  <FaReceipt className="text-lg" />
                 </div>
+              </div>
+              <div className="mt-2">
+                {unreadOrdersCount > 0 ? (
+                  <span className="text-red-600 text-[11px] font-bold block truncate">
+                    ● {unreadOrdersCount} nouvelle{unreadOrdersCount > 1 ? "s" : ""}
+                  </span>
+                ) : (
+                  <span className="text-green-600 text-[11px] font-medium block truncate">
+                    À jour
+                  </span>
+                )}
               </div>
             </div>
 
-            {/* 👈 Carte KPI pour les retours */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all duration-200 hover:-translate-y-0.5">
+            {/* 6. Retours en attente */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition-all duration-200 hover:-translate-y-0.5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Retours en attente</p>
-                  <p className="text-3xl font-bold text-gray-900 mt-2">
+                  <p className="text-xs font-semibold text-gray-500 truncate">Retours</p>
+                  <p className="text-2xl font-bold text-gray-900 mt-1">
                     {loadingKpis ? "..." : pendingReturnsCount.toLocaleString("fr-FR")}
                   </p>
-                  <div className="flex items-center mt-2">
-                    {pendingReturnsCount > 0 ? (
-                      <span className="text-red-600 text-sm font-bold flex items-center">
-                        ● Action requise
-                      </span>
-                    ) : (
-                      <span className="text-green-600 text-sm font-medium flex items-center">
-                        Aucun retour en attente
-                      </span>
-                    )}
-                  </div>
                 </div>
-                <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
-                  <FaUndoAlt className="text-red-600 text-xl" />
+                <div className="w-10 h-10 bg-red-100 text-red-600 rounded-lg flex items-center justify-center shrink-0">
+                  <FaUndoAlt className="text-lg" />
                 </div>
+              </div>
+              <div className="mt-2">
+                {pendingReturnsCount > 0 ? (
+                  <span className="text-red-600 text-[11px] font-bold block truncate">
+                    ● En attente
+                  </span>
+                ) : (
+                  <span className="text-green-600 text-[11px] font-medium block truncate">
+                    Aucun retour
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -410,7 +443,6 @@ function AdminPage() {
                       {item.label}
                     </div>
 
-                    {/* Badge visuel pour les notifications */}
                     {item.badge && item.badge > 0 ? (
                       <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full font-extrabold animate-pulse">
                         {item.badge}

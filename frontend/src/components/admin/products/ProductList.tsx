@@ -1,11 +1,9 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 
-// Configuration dynamique des URL d'API et de stockage
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
 const STORAGE_BASE_URL = API_BASE_URL.replace(/\/api\/?$/, "");
 
-// 1. Types TypeScript pour les produits (avec l'attribut is_active)
 export interface Product {
   id: number | string;
   title?: string;
@@ -28,10 +26,13 @@ function ProductList() {
   const [deletingId, setDeletingId] = useState<number | string | null>(null);
   const [togglingId, setTogglingId] = useState<number | string | null>(null);
 
-  // 👈 État pour la barre de recherche
+  // État pour la recherche
   const [searchTerm, setSearchTerm] = useState<string>("");
 
-  // Helper pour récupérer le token XSRF des cookies (Laravel Sanctum)
+  // 📄 GESTION DE LA PAGINATION (20 par page)
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const itemsPerPage = 20;
+
   const getXsrfToken = () => {
     const cookies = document.cookie.split(";");
     for (let cookie of cookies) {
@@ -51,12 +52,11 @@ function ProductList() {
     };
   };
 
-  // 📥 1. Récupération des produits depuis l'API Laravel
   const fetchProducts = async () => {
     try {
       setLoading(true);
       const response = await fetch(`${API_BASE_URL}/admin/products`, {
-        credentials: "include", 
+        credentials: "include",
         headers: getAuthHeaders(),
       });
 
@@ -82,7 +82,6 @@ function ProductList() {
     fetchProducts();
   }, []);
 
-  // 🔄 2. Bascule du statut d'un produit (Activer / Désactiver)
   const handleToggleStatus = async (id: number | string, currentStatus?: boolean) => {
     setTogglingId(id);
 
@@ -115,7 +114,6 @@ function ProductList() {
     }
   };
 
-  // 🗑️ 3. Suppression d'un produit
   const handleDelete = async (id: number | string, productName: string) => {
     if (!window.confirm(`Êtes-vous sûr de vouloir supprimer "${productName}" ?`)) {
       return;
@@ -149,7 +147,7 @@ function ProductList() {
     }
   };
 
-  // 👈 Filtrage dynamique des produits par nom ou catégorie
+  // Filtrage des produits
   const filteredProducts = products.filter((product) => {
     const query = searchTerm.trim().toLowerCase();
     if (!query) return true;
@@ -164,16 +162,25 @@ function ProductList() {
     return productName.includes(query) || categoryName.includes(query);
   });
 
-  // 🖼️ 4. Extraction sécurisée de l'image
+  // 📄 CALCUL DES PRODUITS POUR LA PAGE ACTIVE
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
+
+  // Remise à la première page lors de la recherche
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    setCurrentPage(1);
+  };
+
   const getProductImage = (product: Product): string => {
     let rawImgs = product.images;
 
     if (typeof rawImgs === "string") {
       try {
         rawImgs = JSON.parse(rawImgs);
-      } catch {
-        // Simple string
-      }
+      } catch {}
     }
 
     const formatUrl = (path: string) => {
@@ -211,7 +218,7 @@ function ProductList() {
           Liste des Produits
         </h1>
 
-        {/* Barre d'action supérieure avec Recherche */}
+        {/* Action bar */}
         <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
           <div className="flex items-center gap-3 w-full md:w-auto">
             <Link
@@ -228,7 +235,6 @@ function ProductList() {
             </Link>
           </div>
 
-          {/* 👈 Champ de Recherche */}
           <div className="relative w-full md:w-72">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <svg
@@ -248,13 +254,13 @@ function ProductList() {
             <input
               type="text"
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Rechercher un produit ou catégorie..."
+              onChange={(e) => handleSearchChange(e.target.value)}
+              placeholder="Rechercher un produit..."
               className="w-full pl-9 pr-8 py-2 text-sm bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
             />
             {searchTerm && (
               <button
-                onClick={() => setSearchTerm("")}
+                onClick={() => handleSearchChange("")}
                 className="absolute inset-y-0 right-0 pr-2.5 flex items-center text-gray-400 hover:text-gray-600"
               >
                 ✕
@@ -263,7 +269,7 @@ function ProductList() {
           </div>
         </div>
 
-        {/* Tableau d'affichage */}
+        {/* Table */}
         <div className="overflow-x-auto bg-white rounded-lg shadow">
           <table className="w-full table-auto">
             <thead>
@@ -280,7 +286,6 @@ function ProductList() {
             </thead>
 
             <tbody className="text-gray-600 text-sm">
-              {/* État de chargement */}
               {loading && (
                 <tr>
                   <td colSpan={8} className="py-8 text-center text-gray-500">
@@ -289,7 +294,6 @@ function ProductList() {
                 </tr>
               )}
 
-              {/* Erreur */}
               {error && !loading && (
                 <tr>
                   <td colSpan={8} className="py-8 text-center text-red-500">
@@ -298,7 +302,6 @@ function ProductList() {
                 </tr>
               )}
 
-              {/* Aucun produit correspondant */}
               {!loading && !error && filteredProducts.length === 0 && (
                 <tr>
                   <td colSpan={8} className="py-8 text-center text-gray-500 space-y-2">
@@ -309,7 +312,7 @@ function ProductList() {
                     </p>
                     {searchTerm && (
                       <button
-                        onClick={() => setSearchTerm("")}
+                        onClick={() => handleSearchChange("")}
                         className="text-xs font-semibold text-blue-500 hover:underline"
                       >
                         Effacer la recherche
@@ -319,16 +322,15 @@ function ProductList() {
                 </tr>
               )}
 
-              {/* Boucle d'affichage des produits filtrés */}
+              {/* Rendu dynamique des 20 produits paginés */}
               {!loading &&
                 !error &&
-                filteredProducts.map((product) => {
+                paginatedProducts.map((product) => {
                   const productName = product.title || product.name || "Sans nom";
                   const categoryName =
                     typeof product.category === "object"
                       ? product.category?.name
                       : product.category || "N/A";
-                  
                   const isActive = product.is_active ?? true;
 
                   return (
@@ -336,12 +338,10 @@ function ProductList() {
                       key={product.id}
                       className="border-b border-gray-200 hover:bg-gray-50 transition-colors"
                     >
-                      {/* ID */}
                       <td className="py-3 px-6 text-left font-medium">
                         #{product.id}
                       </td>
 
-                      {/* Image */}
                       <td className="py-3 px-6 text-left">
                         <img
                           src={getProductImage(product)}
@@ -354,24 +354,20 @@ function ProductList() {
                         />
                       </td>
 
-                      {/* Nom */}
                       <td className="py-3 px-6 text-left font-semibold text-gray-800">
                         {productName}
                       </td>
 
-                      {/* Catégorie */}
                       <td className="py-3 px-6 text-left">
                         <span className="bg-blue-50 text-blue-600 text-xs px-2.5 py-1 rounded-full font-semibold">
                           {categoryName}
                         </span>
                       </td>
 
-                      {/* Prix */}
                       <td className="py-3 px-6 text-left font-bold text-gray-700">
                         {Number(product.price).toLocaleString()} FCFA
                       </td>
 
-                      {/* Stock */}
                       <td className="py-3 px-6 text-left">
                         <span
                           className={`px-2 py-1 rounded-full text-xs font-bold ${
@@ -384,14 +380,12 @@ function ProductList() {
                         </span>
                       </td>
 
-                      {/* STATUT : BOUTON TOGGLE (ADMIN) */}
                       <td className="py-3 px-6 text-center">
                         <div className="flex items-center justify-center gap-2">
                           <button
                             type="button"
                             onClick={() => handleToggleStatus(product.id, isActive)}
                             disabled={togglingId === product.id}
-                            title={isActive ? "Cliquez pour désactiver" : "Cliquez pour activer"}
                             className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
                               isActive ? "bg-emerald-500" : "bg-gray-300"
                             } ${togglingId === product.id ? "opacity-50 cursor-wait" : ""}`}
@@ -413,10 +407,8 @@ function ProductList() {
                         </div>
                       </td>
 
-                      {/* Actions */}
                       <td className="py-3 px-6 text-center">
                         <div className="flex items-center justify-center gap-2">
-                          {/* Bouton Éditer */}
                           <Link
                             to={`/admin/update-product/${product.id}`}
                             className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-blue-50 text-blue-500 hover:scale-110 transition-all"
@@ -439,7 +431,6 @@ function ProductList() {
                             </svg>
                           </Link>
 
-                          {/* Bouton Supprimer */}
                           <button
                             type="button"
                             onClick={() => handleDelete(product.id, productName)}
@@ -472,22 +463,41 @@ function ProductList() {
           </table>
         </div>
 
-        {/* Bas de page / Statistiques */}
-        <div className="flex justify-between items-center mt-6">
-          <div>
-            <span className="text-sm text-white">
-              Affichage de {filteredProducts.length} produit(s) sur {products.length}
-            </span>
+        {/* 📄 CONTROLES DE PAGINATION */}
+        {!loading && !error && filteredProducts.length > 0 && (
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6">
+            <div>
+              <span className="text-sm text-white">
+                Affichage de {filteredProducts.length > 0 ? startIndex + 1 : 0} à{" "}
+                {Math.min(endIndex, filteredProducts.length)} sur {filteredProducts.length} produit(s)
+              </span>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <button
+                type="button"
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-1.5 rounded-md bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed text-white text-sm transition"
+              >
+                Précédent
+              </button>
+
+              <span className="text-sm text-white font-medium px-2">
+                Page {currentPage} sur {totalPages || 1}
+              </span>
+
+              <button
+                type="button"
+                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                disabled={currentPage >= totalPages}
+                className="px-3 py-1.5 rounded-md bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed text-white text-sm transition"
+              >
+                Suivant
+              </button>
+            </div>
           </div>
-          <div className="flex space-x-2">
-            <button className="px-3 py-1 rounded-md bg-blue-500 hover:bg-blue-600 text-white text-sm transition">
-              Précédent
-            </button>
-            <button className="px-3 py-1 rounded-md bg-blue-500 hover:bg-blue-600 text-white text-sm transition">
-              Suivant
-            </button>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );

@@ -673,7 +673,7 @@ function UserProfile() {
 
             <button
               onClick={() => { setActiveTab("info"); setIsEditing(false); setSelectedOrder(null); }}
-              className={`flex-1 sm:flex-none px-4 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+              className={`flex-1 sm:flex-none px-2 py-2 rounded-xl text-sm font-semibold transition-all ${
                 activeTab === "info"
                   ? "bg-indigo-600 text-white shadow-sm"
                   : "bg-gray-100 text-gray-600 hover:bg-gray-200"
@@ -683,7 +683,7 @@ function UserProfile() {
             </button>
             <button
               onClick={() => { setActiveTab("orders"); setIsEditing(false); }}
-              className={`flex-1 sm:flex-none px-4 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+              className={`flex-1 sm:flex-none px-2 py-2 rounded-xl text-sm font-semibold transition-all ${
                 activeTab === "orders"
                   ? "bg-indigo-600 text-white shadow-sm"
                   : "bg-gray-100 text-gray-600 hover:bg-gray-200"
@@ -693,7 +693,7 @@ function UserProfile() {
             </button>
             <button
               onClick={() => { setActiveTab("cart"); setIsEditing(false); setSelectedOrder(null); }}
-              className={`flex-1 sm:flex-none px-4 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+              className={`flex-1 sm:flex-none px-2 py-2 rounded-xl text-sm font-semibold transition-all ${
                 activeTab === "cart"
                   ? "bg-indigo-600 text-white shadow-sm"
                   : "bg-gray-100 text-gray-600 hover:bg-gray-200"
@@ -706,14 +706,14 @@ function UserProfile() {
               onClick={handleLogout}
               disabled={loggingOut}
               title="Se déconnecter"
-              className="px-4 py-2.5 bg-red-50 hover:bg-red-100 text-red-600 font-semibold text-sm rounded-xl border border-red-100 transition-all flex items-center justify-center gap-2"
+              className="flex items-center gap-1 px-2 py-2 bg-red-50 hover:bg-red-100 text-red-600 font-semibold text-sm rounded-xl border border-red-100 transition-all flex items-center justify-center gap-2"
             >
               {loggingOut ? (
                 <i className="fas fa-spinner fa-spin"></i>
               ) : (
                 <i className="fas fa-sign-out-alt"></i>
               )}
-              <span className="md:inline"><CiLogout /></span>
+              <span className="md:inline"><CiLogout  /></span>
             </button>
           </div>
         </div>
