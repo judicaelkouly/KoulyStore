@@ -613,105 +613,106 @@ function UserProfile() {
     <div className="max-w-5xl mx-auto p-4 md:p-8 font-sans relative">
       {/* Notifications */}
       {error && (
-        <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl flex items-center justify-between">
+        <div className="mb-4 p-4 text-red-700 text-sm flex items-center justify-between">
           <span>{error}</span>
           <button onClick={() => setError(null)} className="font-bold text-red-700 ml-4">&times;</button>
         </div>
       )}
       {successMsg && (
-        <div className="mb-4 p-4 bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm rounded-xl flex items-center justify-between">
+        <div className="mb-4 p-4 text-emerald-700 text-sm flex items-center justify-between">
           <span>{successMsg}</span>
           <button onClick={() => setSuccessMsg(null)} className="font-bold text-emerald-700 ml-4">&times;</button>
         </div>
       )}
 
       {/* En-tête Profil */}
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 mb-6">
-        <div className="flex flex-col sm:flex-row items-center sm:items-start justify-between gap-6">
-          <div className="flex flex-col sm:flex-row items-center gap-5 text-center sm:text-left">
-            <div className="relative group">
-              {currentAvatarSrc && !imageError ? (
-                <img
-                  src={currentAvatarSrc}
-                  alt={user.username}
-                  onError={() => setImageError(true)}
-                  className="w-24 h-24 rounded-full object-cover border-4 border-indigo-50 shadow-md"
-                />
-              ) : (
-                <div className="w-24 h-24 rounded-full bg-indigo-100 border-4 border-indigo-50 shadow-md flex items-center justify-center text-indigo-600 font-bold text-2xl">
-                  {user.username ? user.username.charAt(0).toUpperCase() : <i className="fas fa-user"></i>}
-                </div>
-              )}
-            </div>
-
-            <div>
-              <div className="flex items-center gap-2 justify-center sm:justify-start">
-                <h1 className="text-2xl font-bold text-gray-900">
-                  {user.username || "Utilisateur"}
-                </h1>
-              </div>
-              <p className="text-sm text-gray-500 mt-0.5">{user.email}</p>
-              {user.city && (
-                <div className="flex items-center justify-center sm:justify-start gap-2 mt-2">
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-100">
-                    <i className="fas fa-map-marker-alt mr-1"></i> {user.city}
-                  </span>
-                </div>
-              )}
-            </div>
+      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-6 mb-6">
+  <div className="flex flex-col lg:flex-row items-center lg:items-start justify-between gap-6">
+    
+    {/* Section Profil Utilisateur */}
+    <div className="flex flex-col md:flex-row items-center gap-4 md:gap-5 text-center md:text-left w-full lg:w-auto">
+      <div className="relative group shrink-0">
+        {currentAvatarSrc && !imageError ? (
+          <img
+            src={currentAvatarSrc}
+            alt={user.username}
+            onError={() => setImageError(true)}
+            className="w-20 h-20 md:w-24 md:h-24 rounded-full object-cover border-4 border-indigo-50 shadow-md"
+          />
+        ) : (
+          <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-indigo-100 border-4 border-indigo-50 shadow-md flex items-center justify-center text-indigo-600 font-bold text-2xl">
+            {user.username ? user.username.charAt(0).toUpperCase() : <i className="fas fa-user"></i>}
           </div>
+        )}
+      </div>
 
-          {/* Navigation Onglets */}
-          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto">
-            {isAdmin && (
-              <button
-                onClick={() => navigate("/admin/dashboard")}
-                className="flex-1 sm:flex-none px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-semibold text-sm rounded-xl shadow-sm transition-all flex items-center justify-center gap-2"
-                title="Accéder au Tableau de bord Administrateur"
-              >
-                <FaTachometerAlt />
-                <span>Admin</span>
-              </button>
-            )}
+      <div>
+        <div className="flex items-center gap-2 justify-center md:justify-start">
+          <h1 className="text-xl md:text-2xl font-bold text-gray-900">
+            {user.username || "Utilisateur"}
+          </h1>
+        </div>
+        <p className="text-sm text-gray-500 mt-0.5">{user.email}</p>
+        {user.city && (
+          <div className="flex items-center justify-center md:justify-start gap-2 mt-2">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-100">
+              <i className="fas fa-map-marker-alt mr-1"></i> {user.city}
+            </span>
+          </div>
+        )}
+      </div>
+    </div>
 
-            <button
-              onClick={() => { setActiveTab("info"); setIsEditing(false); setSelectedOrder(null); }}
-              className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold transition-all ${
-                activeTab === "info"
-                  ? "bg-indigo-600 text-white shadow-sm"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              }`}
-            >
-              <FaUser className="text-base" />
-              <span>Mon Profil</span>
-            </button>
+    {/* Navigation Onglets */}
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:flex md:flex-wrap lg:flex-nowrap items-center gap-2 w-full lg:w-auto">
+      {isAdmin && (
+        <button
+          onClick={() => navigate("/admin/dashboard")}
+          className="col-span-2 sm:col-span-1 px-3.5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-semibold text-sm rounded-xl shadow-sm transition-all flex items-center justify-center gap-2"
+          title="Accéder au Tableau de bord Administrateur"
+        >
+          <FaTachometerAlt />
+          <span>Admin</span>
+        </button>
+      )}
 
-            <button
-            onClick={() => { setActiveTab("orders"); setIsEditing(false); }}
-            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold transition-all ${
-              activeTab === "orders"
-                ? "bg-indigo-600 text-white shadow-sm"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            }`}
-          >
-            <Package className="w-5 h-5" />
-            <span>Commandes ({orders.length})</span>
-          </button>
+      <button
+        onClick={() => { setActiveTab("info"); setIsEditing(false); setSelectedOrder(null); }}
+        className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+          activeTab === "info"
+            ? "bg-indigo-600 text-white shadow-sm"
+            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+        }`}
+      >
+        <FaUser className="text-base" />
+        <span>Mon Profil</span>
+      </button>
 
-            <button
-              onClick={() => { setActiveTab("cart"); setIsEditing(false); setSelectedOrder(null); }}
-              className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold transition-all ${
-                activeTab === "cart"
-                  ? "bg-indigo-600 text-white shadow-sm"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              }`}
-            >
-              <MdShoppingCart className="text-lg" />
-              <span>Panier ({cartItems.length})</span>
-            </button>
+      <button
+        onClick={() => { setActiveTab("orders"); setIsEditing(false); }}
+        className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+          activeTab === "orders"
+            ? "bg-indigo-600 text-white shadow-sm"
+            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+        }`}
+      >
+        <Package className="w-5 h-5" />
+        <span>Commandes ({orders.length})</span>
+      </button>
 
+      <button
+        onClick={() => { setActiveTab("cart"); setIsEditing(false); setSelectedOrder(null); }}
+        className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+          activeTab === "cart"
+            ? "bg-indigo-600 text-white shadow-sm"
+            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+        }`}
+      >
+        <MdShoppingCart className="text-lg" />
+        <span>Panier ({cartItems.length})</span>
+      </button>
 
-            <button
+      <button
             onClick={handleLogout}
             disabled={loggingOut}
             title="Se déconnecter"
@@ -724,10 +725,11 @@ function UserProfile() {
             )}
             <span>Déconnexion</span>
           </button>
+    </div>
 
-          </div>
-        </div>
-      </div>
+  </div>
+</div>
+
 
       {/* ONGLET 1 : Informations */}
       {activeTab === "info" && (

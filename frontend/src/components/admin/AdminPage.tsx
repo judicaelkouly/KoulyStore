@@ -402,7 +402,7 @@ function AdminPage() {
   return (
     <div className="bg-gray-100 min-h-screen">
       {/* Sidebar */}
-      <div className="fixed inset-y-0 left-0 w-64 bg-gray-900 shadow-xl z-50 rounded-lg flex flex-col justify-between">
+      <div className="fixed inset-y-0 left-0 w-64 bg-gray-900 shadow-xl z-50  flex flex-col justify-between">
         <div>
           <div className="flex items-center justify-center h-16 bg-gray-900">
             <div className="w-full mt-10 mr-15 md:w-[45%] lg:w-[70%] flex flex-col items-center md:items-start text-center md:text-left">
@@ -411,7 +411,7 @@ function AdminPage() {
                   <img 
                     src="/src/assets/logo4.png" 
                     alt="Kouly'Store Logo"
-                    className="h-10 sm:h-40 w-auto object-contain transition-transform group-hover:scale-105"
+                    className="h-15 sm:h-45 w-auto object-contain transition-transform group-hover:scale-105"
                   />
                 </a>
               </div>
@@ -419,7 +419,7 @@ function AdminPage() {
             </div>
           </div>
 
-          <nav className="mt-8 px-4">
+          <nav className="mt-25 px-4">
             <div className="space-y-2">
               {navItems.map((item) => {
                 const isActive = activeTab === item.id;
