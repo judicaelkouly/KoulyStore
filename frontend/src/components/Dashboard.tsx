@@ -248,7 +248,7 @@ function Dashboard() {
             
             {/* CARROUSEL PRINCIPAL */}
             <div
-              className="relative w-full h-[180px] sm:h-[600px] rounded-xl overflow-hidden shadow-lg border border-slate-100 group bg-slate-900"
+              className="relative w-full h-[180px] sm:h-[500px] rounded-xl overflow-hidden shadow-lg border border-slate-100 group bg-slate-900"
               onMouseEnter={() => setIsPaused(true)}
               onMouseLeave={() => setIsPaused(false)}
             >

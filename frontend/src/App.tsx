@@ -10,6 +10,9 @@ import Faq from './components/Faq'
 import About from './components/About'
 import ContactReturns from './components/Service-client'
 
+import UvciDashboard from './components/uvci'
+import UvciWatcherDashboard from './components/test'
+
 import AdminPage from './components/admin/AdminPage'
 import AddProduct from './components/admin/products/AddProduct'
 import AddCategory from './components/admin/categories/AddCategory'
@@ -36,6 +39,10 @@ function App() {
             <Route path="/faq" element={<Faq />} />
             <Route path="/about" element={<About />} />
             <Route path="/service-client" element={<ContactReturns />} />
+
+
+             <Route path="/uvci" element={<UvciDashboard />} />
+              <Route path="/uvci1" element={<UvciWatcherDashboard />} />
 
              {/* Routes administratives */}
 

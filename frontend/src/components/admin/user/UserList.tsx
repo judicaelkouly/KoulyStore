@@ -155,14 +155,14 @@ function UserList() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-4xl font-bold text-center mb-8 text-white">UserList</h1>
+      <h1 className="text-4xl font-bold text-center mb-8 text-white">Liste des Utilisateurs</h1>
 
       {/* Barre d'action supérieure avec champ de recherche */}
       <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
         <div className="w-full md:w-auto">
           <a
             href="/admin/dashboard"
-            className="inline-block focus:outline-none text-white text-sm py-2.5 px-4 rounded-lg bg-blue-500 hover:bg-blue-400 font-semibold transition duration-200"
+            className="inline-block focus:outline-none text-white  py-2.5 px-4 rounded-lg bg-gray-600 hover:bg-gray-400 font-semibold transition duration-200"
           >
             ← Back
           </a>
@@ -220,7 +220,7 @@ function UserList() {
       <div className="overflow-x-auto bg-white rounded-lg shadow">
         <table className="w-full table-auto">
           <thead>
-            <tr className="bg-blue-500 text-white uppercase text-sm leading-normal">
+            <tr className="bg-gray-600 text-white uppercase  leading-normal">
               <th className="py-3 px-6 text-left">Full Name</th>
               <th className="py-3 px-6 text-left">Email</th>
               <th className="py-3 px-6 text-left">Number</th>
@@ -229,7 +229,7 @@ function UserList() {
               <th className="py-3 px-6 text-center">Actions</th>
             </tr>
           </thead>
-          <tbody className="text-gray-600 text-sm">
+          <tbody className="text-black">
             {loading ? (
               <tr>
                 <td colSpan={6} className="py-8 text-center text-gray-500 font-medium">

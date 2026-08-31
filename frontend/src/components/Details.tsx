@@ -366,7 +366,7 @@ function Details() {
 
       {/* Affichage des détails du produit */}
       {!loading && !error && product && (
-        <div className="max-w-6xl mx-auto space-y-8">
+        <div className="max-w-7xl mx-auto space-y-8">
           <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-gray-200/80 dark:border-gray-700/60 p-6 md:p-10">
             <div className="flex flex-col lg:flex-row gap-10">
               

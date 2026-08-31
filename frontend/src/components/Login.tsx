@@ -38,42 +38,54 @@ function Login() {
     setErrors({});
     setSuccessMessage('');
 
-    try {
-      await fetch(`${SANCTUM_BASE_URL}/sanctum/csrf-cookie`, {
-        method: 'GET',
-        credentials: 'include',
-      });
+  try {
+  // 1. Démarrer le compteur avant TOUTE la procédure de connexion
+  console.time("Connexion globale");
 
-      const response = await fetch(`${API_BASE_URL}/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({ email, password }),
-      });
+  // Mesurer spécifiquement le temps pris par le cookie CSRF Sanctum
+  console.time("Temps CSRF Sanctum");
+  await fetch(`${SANCTUM_BASE_URL}/sanctum/csrf-cookie`, {
+    method: 'GET',
+    credentials: 'include',
+  });
+  console.timeEnd("Temps CSRF Sanctum");
 
-      const data = await response.json();
+  // Mesurer la requête POST Login
+  console.time("Temps API Login");
+  const response = await fetch(`${API_BASE_URL}/login`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify({ email, password }),
+  });
 
-      if (!response.ok || !data.status) {
-        if (data.errors) {
-          setErrors(data.errors);
-        } else {
-          setErrors({ general: data.message || 'Identifiants incorrects.' });
-        }
-      } else {
-        setSuccessMessage('Connexion réussie ! Redirection...');
+  const data = await response.json();
+  console.timeEnd("Temps API Login");
 
-        setTimeout(() => {
-          window.location.href = data.redirect_url || '/';
-        }, 1000);
-      }
-    } catch (error) {
-      setErrors({ general: 'Impossible de contacter le serveur.' });
-    } finally {
-      setLoading(false);
+  if (!response.ok || !data.status) {
+    if (data.errors) {
+      setErrors(data.errors);
+    } else {
+      setErrors({ general: data.message || 'Identifiants incorrects.' });
     }
+  } else {
+    setSuccessMessage('Connexion réussie ! Redirection...');
+
+    setTimeout(() => {
+      window.location.href = data.redirect_url || '/';
+    }, 1000);
+  }
+} catch (error) {
+  setErrors({ general: 'Impossible de contacter me serveur.' });
+} finally {
+  // 2. Clôturer impérativement le compteur global
+  console.timeEnd("Connexion globale");
+  setLoading(false);
+}
+
   };
 
   return (

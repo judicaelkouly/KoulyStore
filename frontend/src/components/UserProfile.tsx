@@ -1,6 +1,8 @@
+import { Package } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import { CiLogout } from "react-icons/ci";
-import { FaTachometerAlt, FaStar } from "react-icons/fa";
+import { FaTachometerAlt, FaStar, FaUser } from "react-icons/fa";
+import { MdShoppingCart } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 
 // Configuration dynamique de l'API et du stockage
@@ -608,7 +610,7 @@ function UserProfile() {
   const displayedOrders = orderFilterTab === "active" ? activeOrders : cancelledOrders;
 
   return (
-    <div className="max-w-4xl mx-auto p-4 md:p-8 font-sans relative">
+    <div className="max-w-5xl mx-auto p-4 md:p-8 font-sans relative">
       {/* Notifications */}
       {error && (
         <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl flex items-center justify-between">
@@ -668,53 +670,61 @@ function UserProfile() {
                 title="Accéder au Tableau de bord Administrateur"
               >
                 <FaTachometerAlt />
+                <span>Admin</span>
               </button>
             )}
 
             <button
               onClick={() => { setActiveTab("info"); setIsEditing(false); setSelectedOrder(null); }}
-              className={`flex-1 sm:flex-none px-2 py-2 rounded-xl text-sm font-semibold transition-all ${
+              className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold transition-all ${
                 activeTab === "info"
                   ? "bg-indigo-600 text-white shadow-sm"
                   : "bg-gray-100 text-gray-600 hover:bg-gray-200"
               }`}
             >
-              <i className="fas fa-user mr-2"></i>Mon Profil
+              <FaUser className="text-base" />
+              <span>Mon Profil</span>
             </button>
+
             <button
-              onClick={() => { setActiveTab("orders"); setIsEditing(false); }}
-              className={`flex-1 sm:flex-none px-2 py-2 rounded-xl text-sm font-semibold transition-all ${
-                activeTab === "orders"
-                  ? "bg-indigo-600 text-white shadow-sm"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              }`}
-            >
-              <i className="fas fa-shopping-bag mr-2"></i>Commandes ({orders.length})
-            </button>
+            onClick={() => { setActiveTab("orders"); setIsEditing(false); }}
+            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold transition-all ${
+              activeTab === "orders"
+                ? "bg-indigo-600 text-white shadow-sm"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            }`}
+          >
+            <Package className="w-5 h-5" />
+            <span>Commandes ({orders.length})</span>
+          </button>
+
             <button
               onClick={() => { setActiveTab("cart"); setIsEditing(false); setSelectedOrder(null); }}
-              className={`flex-1 sm:flex-none px-2 py-2 rounded-xl text-sm font-semibold transition-all ${
+              className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold transition-all ${
                 activeTab === "cart"
                   ? "bg-indigo-600 text-white shadow-sm"
                   : "bg-gray-100 text-gray-600 hover:bg-gray-200"
               }`}
             >
-              <i className="fas fa-shopping-cart mr-2"></i>Panier ({cartItems.length})
+              <MdShoppingCart className="text-lg" />
+              <span>Panier ({cartItems.length})</span>
             </button>
 
+
             <button
-              onClick={handleLogout}
-              disabled={loggingOut}
-              title="Se déconnecter"
-              className="flex items-center gap-1 px-2 py-2 bg-red-50 hover:bg-red-100 text-red-600 font-semibold text-sm rounded-xl border border-red-100 transition-all flex items-center justify-center gap-2"
-            >
-              {loggingOut ? (
-                <i className="fas fa-spinner fa-spin"></i>
-              ) : (
-                <i className="fas fa-sign-out-alt"></i>
-              )}
-              <span className="md:inline"><CiLogout  /></span>
-            </button>
+            onClick={handleLogout}
+            disabled={loggingOut}
+            title="Se déconnecter"
+            className="flex items-center justify-center gap-2 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-600 font-semibold text-sm rounded-xl border border-red-100 transition-all"
+          >
+            {loggingOut ? (
+              <i className="fas fa-spinner fa-spin"></i>
+            ) : (
+              <CiLogout className="text-lg" />
+            )}
+            <span>Déconnexion</span>
+          </button>
+
           </div>
         </div>
       </div>

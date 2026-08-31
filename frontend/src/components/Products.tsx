@@ -439,7 +439,7 @@ function Products({
 
       {!loading && !error && filteredProducts.length > 0 && (
         <>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-6">
             {filteredProducts.map((product) => {
               const hasOffer = Boolean(
                 product.promo_price && Number(product.promo_price) > 0

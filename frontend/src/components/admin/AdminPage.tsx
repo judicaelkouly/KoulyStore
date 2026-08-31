@@ -20,6 +20,7 @@ import {
 import { MdOutlineProductionQuantityLimits } from "react-icons/md";
 import { TbCategoryPlus } from "react-icons/tb";
 import { PiFlagBannerFoldFill } from "react-icons/pi";
+import { Package } from "lucide-react";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
 const API_HOST_URL = API_BASE_URL.replace(/\/api\/?$/, "");
@@ -207,7 +208,7 @@ function AdminPage() {
     { id: "users", label: "Users", icon: <FaUsers /> },
     { id: "products", label: "Products", icon: <MdOutlineProductionQuantityLimits /> },
     { id: "categories", label: "Categories", icon: <TbCategoryPlus /> },
-    { id: "orders", label: "Orders", icon: <FaReceipt />, badge: unreadOrdersCount },
+    { id: "orders", label: "Orders", icon: <Package />, badge: unreadOrdersCount },
     { id: "returns", label: "Retours", icon: <FaUndoAlt />, badge: pendingReturnsCount },
     { id: "banner", label: "Bannière", icon: <PiFlagBannerFoldFill /> },
     { id: "analytics", label: "Analytics", icon: <FaChartBar /> },
@@ -289,7 +290,7 @@ function AdminPage() {
                   </p>
                 </div>
                 <div className="w-10 h-10 bg-orange-100 text-orange-600 rounded-lg flex items-center justify-center shrink-0">
-                  <FaReceipt className="text-lg" />
+                  <Package className="text-lg" />
                 </div>
               </div>
               <div className="mt-2">

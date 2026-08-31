@@ -56,6 +56,10 @@ function Register() {
     setSuccessMessage('');
 
     try {
+        console.time("Connexion globale");
+
+        console.time("Temps API Register");
+
       const response = await fetch(`${API_BASE_URL}/register`, {
         method: 'POST',
         headers: {
@@ -66,6 +70,7 @@ function Register() {
       });
 
       const data = await response.json();
+  console.timeEnd("Temps API Register");
 
       if (!response.ok) {
         if (data.errors) {
@@ -90,6 +95,8 @@ function Register() {
     } catch (error) {
       setErrors({ general: 'Impossible de contacter le serveur.' });
     } finally {
+        console.timeEnd("Connexion globale");
+
       setLoading(false);
     }
   };

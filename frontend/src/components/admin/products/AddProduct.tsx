@@ -246,7 +246,7 @@ function AddProduct() {
     <div className="py-8 px-4 md:px-8 bg-white min-h-screen flex flex-col items-center">
       <form
         onSubmit={handleSubmit}
-        className="space-y-6 max-w-2xl w-full bg-white p-6 rounded-xl border border-gray-200 shadow-sm"
+        className="space-y-6 max-w-6xl max-h-6xl w-full bg-white p-6 rounded-xl border border-gray-200 shadow-sm"
       >
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg text-center font-bold text-gray-800">
@@ -279,7 +279,7 @@ function AddProduct() {
               <div key={index} className="relative">
                 <label
                   htmlFor={`image-${index}`}
-                  className="relative flex items-center justify-center w-20 h-20 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-indigo-500 transition-colors overflow-hidden bg-gray-50 group"
+                  className="relative flex items-center justify-center w-45 h-45 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-indigo-500 transition-colors overflow-hidden bg-gray-50 group"
                 >
                   <input
                     accept="image/*"

@@ -154,13 +154,13 @@ function CategoryList() {
         <div className="flex items-center gap-3 w-full md:w-auto">
           <Link
             to="/admin/dashboard"
-            className="focus:outline-black text-white text-sm py-2.5 px-4 rounded-lg bg-blue-500 hover:bg-blue-600 transition duration-300"
+            className="focus:outline-black text-white  py-2.5 px-4 rounded-lg bg-gray-600 hover:bg-gray-400 transition duration-300"
           >
             Retour
           </Link>
           
           <Link to="/admin/add-category">
-            <button className="bg-blue-500 text-white px-4 py-2.5 text-sm rounded-lg hover:bg-blue-600 transition duration-300">
+            <button className="bg-gray-600 text-white px-4 py-2.5 rounded-lg hover:bg-gray-400 transition duration-300">
               Ajouter une catégorie
             </button>
           </Link>
@@ -211,7 +211,7 @@ function CategoryList() {
       <div className="overflow-x-auto bg-white rounded-lg shadow">
         <table className="w-full table-auto">
           <thead>
-            <tr className="bg-blue-500 text-white uppercase text-sm leading-normal">
+            <tr className="bg-gray-600 text-white uppercase  leading-normal">
               <th className="py-3 px-6 text-left">ID</th>
               <th className="py-3 px-6 text-left">Image</th>
               <th className="py-3 px-6 text-left">Nom de la catégorie</th>
@@ -255,7 +255,7 @@ function CategoryList() {
                     <img
                       src={getImageUrl(category)}
                       alt={category.name}
-                      className="w-10 h-10 rounded-lg object-cover border border-gray-200"
+                      className="w-20 h-20 rounded-lg object-cover border border-gray-200"
                       onError={(e) => {
                         (e.target as HTMLImageElement).src = "/src/assets/myy.jpeg";
                       }}
