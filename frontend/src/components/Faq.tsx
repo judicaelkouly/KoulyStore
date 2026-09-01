@@ -192,7 +192,7 @@ function Faq({ user }: { user?: any }) {
             Notre équipe du service client est disponible du Lundi au Samedi pour vous assister dans vos achats.
           </p>
           <a
-            href="/contact"
+            href="/service-client"
             className="inline-flex items-center gap-2 bg-white text-indigo-900 font-extrabold text-xs sm:text-sm px-6 py-3 rounded-xl hover:bg-slate-100 transition-all shadow-md active:scale-95"
           >
             Contacter le support

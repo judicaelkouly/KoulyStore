@@ -1,6 +1,9 @@
 import  { useEffect, useState } from "react";
 import { Navigate, Outlet } from "react-router-dom";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
+
+
 // Helper pour récupérer le token XSRF
 const getXsrfToken = () => {
   const cookies = document.cookie.split(";");
@@ -19,7 +22,7 @@ const AdminRoute = () => {
     const checkAdminStatus = async () => {
       try {
         const xsrfToken = getXsrfToken();
-        const res = await fetch("http://localhost:8000/api/profile", {
+        const res = await fetch(`${API_BASE_URL}/profile`, {
           method: "GET",
           headers: {
             Accept: "application/json",

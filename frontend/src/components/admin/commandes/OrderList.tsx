@@ -312,7 +312,7 @@ function OrderList({ onOrdersUpdated }: OrderListProps) {
     <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6 relative">
       {/* Affichage d'erreur */}
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl flex items-center justify-between">
+        <div className="p-4  text-red-700 text-sm rounded-xl flex items-center justify-between">
           <span>{error}</span>
           <button
             onClick={() => setError(null)}

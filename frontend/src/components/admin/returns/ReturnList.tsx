@@ -214,7 +214,7 @@ function ReturnList({ onReturnsUpdated }: ReturnListProps) {
 
       {/* Message d'erreur */}
       {error && (
-        <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm flex justify-between items-center">
+        <div className="mb-6 p-4  text-red-700 rounded-lg text-sm flex justify-between items-center">
           <span>{error}</span>
           <button
             onClick={fetchReturns}

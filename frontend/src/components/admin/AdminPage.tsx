@@ -14,7 +14,6 @@ import {
   FaHome, 
   FaDollarSign, 
   FaSignOutAlt, 
-  FaReceipt,
   FaUndoAlt 
 } from "react-icons/fa";
 import { MdOutlineProductionQuantityLimits } from "react-icons/md";
@@ -23,7 +22,7 @@ import { PiFlagBannerFoldFill } from "react-icons/pi";
 import { Package } from "lucide-react";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
-const API_HOST_URL = API_BASE_URL.replace(/\/api\/?$/, "");
+const STORAGE_BASE_URL = API_BASE_URL.replace(/\/api\/?$/, "");
 
 interface OrderSummary {
   id: number;
@@ -83,7 +82,7 @@ function AdminPage() {
       return path;
     }
     const cleanPath = path.replace(/^\//, "").replace(/^storage\//, "");
-    return `http://localhost:8000/storage/${cleanPath}`;
+    return `${STORAGE_BASE_URL}/storage/${cleanPath}`;
   };
 
   // Chargement des données dynamiques du Dashboard et du Profil Admin
