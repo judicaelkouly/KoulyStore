@@ -263,7 +263,8 @@ function Products({
     let imgPath: string | null = null;
 
     if (Array.isArray(rawImages) && rawImages.length > 0) {
-      const firstItem = rawImages[0];
+      const firstItem = rawImages[0] as { url?: string; path?: string; image_path?: string } | string | undefined;
+
       if (typeof firstItem === "object" && firstItem !== null) {
         imgPath = firstItem.url || firstItem.path || firstItem.image_path || null;
       } else if (typeof firstItem === "string") {

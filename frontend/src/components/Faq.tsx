@@ -57,7 +57,7 @@ const faqData: FaqItem[] = [
   }
 ];
 
-function Faq({ user }: { user?: any }) {
+function Faq() {
   const [openId, setOpenId] = useState<number | null>(1); // Le 1er élément est ouvert par défaut
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");

@@ -26,7 +26,7 @@ function BannerList() {
   const [subtitle, setSubtitle] = useState("");
   const [badge, setBadge] = useState("NOUVELLE COLLECTION");
   const [buttonText, setButtonText] = useState("Découvrir la sélection");
-  const [buttonLink, setButtonLink] = useState("#products");
+  const buttonLink = "#products";  
   
   // État du fichier image sélectionné
   const [imageFile, setImageFile] = useState<File | null>(null);

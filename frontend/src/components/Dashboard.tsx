@@ -10,6 +10,8 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000
 // URL hôte pour les images stockées (ex: https://ton-back.onrender.com)
 const API_HOST_URL = API_BASE_URL.replace(/\/api\/?$/, "");
 
+
+
 // Interfaces TypeScript
 interface Category {
   id: number | string;
@@ -213,7 +215,7 @@ function Dashboard() {
           Chargement de la session...
         </div>
       ) : user ? (
-        <HeaderConnect user={user} />
+        <HeaderConnect {...user} />
       ) : (
         <Header />
       )}
