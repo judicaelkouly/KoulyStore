@@ -452,104 +452,145 @@ function Products({
 
               return (
                 <div
-                  key={product.id}
-                  className="group relative bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between overflow-hidden hover:-translate-y-1"
-                >
-                  <a href={`/details?id=${product.id}`} className="block relative">
-                    <div className="relative overflow-hidden h-44 sm:h-64 bg-slate-50">
-                      <img
-                        src={getSingleImageUrl(product)}
-                        alt={product.title}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src =
-                            "https://images.unsplash.com/photo-1546868871-7041f2a55e12?auto=format&fit=crop&w=600&q=80";
-                        }}
-                      />
+  key={product.id}
+  className="group relative bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col overflow-hidden hover:-translate-y-1"
+>
+  {/* SECTION IMAGE & BADGES */}
+  <a href={`/details?id=${product.id}`} className="block relative">
+    <div className="relative overflow-hidden h-48 sm:h-56 bg-slate-50">
+      <img
+        src={getSingleImageUrl(product)}
+        alt={product.title}
+        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+        onError={(e) => {
+          (e.target as HTMLImageElement).src =
+            "https://images.unsplash.com/photo-1546868871-7041f2a55e12?auto=format&fit=crop&w=600&q=80";
+        }}
+      />
 
-                      {hasOffer && (
-                        <span className="absolute top-2 left-2 bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow">
-                          PROMO
-                        </span>
-                      )}
+      {/* Badges d'état (Promo) */}
+      <div className="absolute top-2.5 left-2.5 flex flex-col gap-1 z-10">
+        {hasOffer && (
+          <span className="bg-red-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-md tracking-wider uppercase">
+            PROMO
+          </span>
+        )}
+      </div>
 
-                      <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-end p-3 gap-2">
-                        <button
-                          type="button"
-                          onClick={(e) => handleAddToCart(e, product.id)}
-                          disabled={addingId === product.id}
-                          className="w-full bg-white text-slate-900 hover:bg-slate-100 py-2 rounded-lg font-semibold text-xs shadow transition-all flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer"
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-4 w-4"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z"
-                            />
-                          </svg>
-                          {addingId === product.id ? "Ajout..." : "Panier"}
-                        </button>
+      {/* OVERLAY D'ACTIONS AU SURVOL (Desktop uniquement) */}
+      <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 hidden sm:flex flex-col items-center justify-end p-3 gap-2 backdrop-blur-[2px]">
+        <button
+          type="button"
+          onClick={(e) => handleAddToCart(e, product.id)}
+          disabled={addingId === product.id}
+          className="w-full bg-white text-slate-900 hover:bg-slate-100 py-2 rounded-xl font-semibold text-xs shadow-md transition-all flex items-center justify-center gap-2 active:scale-95 cursor-pointer"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-4 w-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z"
+            />
+          </svg>
+          {addingId === product.id ? "Ajout en cours..." : "Ajouter au panier"}
+        </button>
 
-                        <button
-                          type="button"
-                          onClick={(e) => handleDirectBuy(e, product)}
-                          className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg font-semibold text-xs shadow transition-all flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer"
-                        >
-                          Acheter
-                        </button>
-                      </div>
-                    </div>
-                  </a>
+        <button
+          type="button"
+          onClick={(e) => handleDirectBuy(e, product)}
+          className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-xl font-semibold text-xs shadow-md transition-all flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer"
+        >
+          Acheter maintenant
+        </button>
+      </div>
+    </div>
+  </a>
 
-                  <div className="p-4 flex flex-col justify-between flex-grow">
-                    <div>
-                      <a href={`/details?id=${product.id}`}>
-                        <h3 className=" text-black font-semibold text-lg sm:text-base line-clamp-1 hover:text-indigo-600 transition-colors">
-                          {product.title}
-                        </h3>
-                      </a>
-                    </div>
+  {/* SECTION CONTENU & INFORMATIONS */}
+  <div className="p-4 flex flex-col justify-between flex-grow gap-3">
+    <div>
+      {/* Titre */}
+      <a href={`/details?id=${product.id}`}>
+        <h3 className="text-slate-800 font-bold text-sm sm:text-base line-clamp-2 hover:text-indigo-600 transition-colors leading-snug">
+          {product.title}
+        </h3>
+      </a>
 
-                    <div className="mt-4 pt-2 border-t border-gray-50 flex items-center justify-between">
-                      <div>
-                        {hasOffer ? (
-                          <div className="flex flex-col">
-                            <span className="font-extrabold text-indigo-600 text-xs sm:text-sm">
-                              {Number(product.promo_price).toLocaleString()} FCFA
-                            </span>
-                            <span className="text-[10px] text-gray-400 line-through">
-                              {Number(product.price).toLocaleString()} FCFA
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="font-extrabold text-indigo-600 text-xs sm:text-sm">
-                            {Number(product.price).toLocaleString()} FCFA
-                          </span>
-                        )}
-                      </div>
+      {/* Évaluations / Étoiles */}
+      <div className="flex items-center gap-1.5 mt-1.5">
+        <div className="flex items-center text-amber-400 text-xs">
+          {renderStars(productRating)}
+        </div>
+        {reviewsCount > 0 && (
+          <span className="text-[11px] text-gray-400 font-medium">
+            ({reviewsCount})
+          </span>
+        )}
+      </div>
+    </div>
 
-                      <div className="flex items-center gap-1">
-                        {renderStars(productRating)}
-                        {reviewsCount > 0 && (
-                          <span className="text-[10px] text-gray-400 font-medium">
-                            ({reviewsCount})
-                          </span>
-                        )}
-                      </div>
-                    </div>
+    {/* BAS DE CARTE : Prix, Stock & Actions */}
+    <div className="pt-2 border-t border-gray-100 flex flex-col gap-2">
+      {/* Flex direction vertical sur mobile (flex-col), horizontal sur PC (sm:flex-row) */}
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between items-start gap-1 sm:gap-2">
+        {/* Prix */}
+        <div className="flex flex-col">
+          {hasOffer ? (
+            <>
+              <span className="text-[11px] text-gray-400 line-through leading-none">
+                {Number(product.price).toLocaleString()} FCFA
+              </span>
+              <span className="font-extrabold text-indigo-600 text-base sm:text-lg leading-tight">
+                {Number(product.promo_price).toLocaleString()} FCFA
+              </span>
+            </>
+          ) : (
+            <span className="font-extrabold text-indigo-600 text-base sm:text-lg leading-tight">
+              {Number(product.price).toLocaleString()} FCFA
+            </span>
+          )}
+        </div>
 
-                    <span className="text-gray-400 text-[10px] sm:text-xs text-center mt-1">
-                      ({product.stock || 0}) Articles seulement restants
-                    </span>
-                  </div>
-                </div>
+        {/* Indication du stock (sur sa propre ligne sur mobile) */}
+        <span
+          className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${
+            (product.stock || 0) <= 5
+              ? "bg-amber-50 text-amber-700"
+              : "bg-gray-100 text-gray-500"
+          }`}
+        >
+          {product.stock || 0} restants
+        </span>
+      </div>
+
+      {/* BOUTONS D'ACTION MOBILE */}
+      <div className="grid grid-cols-2 gap-2 sm:hidden mt-1">
+        <button
+          type="button"
+          onClick={(e) => handleAddToCart(e, product.id)}
+          disabled={addingId === product.id}
+          className="bg-slate-100 text-slate-800 py-1.5 rounded-lg text-[11px] font-semibold active:scale-95 cursor-pointer"
+        >
+          {addingId === product.id ? "..." : "+ Panier"}
+        </button>
+        <button
+          type="button"
+          onClick={(e) => handleDirectBuy(e, product)}
+          className="bg-indigo-600 text-white py-1.5 rounded-lg text-[11px] font-semibold active:scale-95 cursor-pointer"
+        >
+          Acheter
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
               );
             })}
           </div>
