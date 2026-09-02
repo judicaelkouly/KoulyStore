@@ -74,9 +74,9 @@ function Login() {
   } else {
     setSuccessMessage('Connexion réussie ! Redirection...');
 
-    // setTimeout(() => {
-    //   window.location.href = data.redirect_url || '/';
-    // }, 1000);
+    setTimeout(() => {
+      window.location.href = data.redirect_url || '/';
+    }, 1000);
   }
 } catch (error) {
   setErrors({ general: 'Impossible de contacter me serveur.' });
