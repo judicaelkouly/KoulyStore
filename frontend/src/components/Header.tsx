@@ -142,7 +142,7 @@ function Header() {
         <div className="flex items-center">
          <a href="/" className="flex items-center gap-3 group">
             <img 
-              src="/src/assets/logo3.png" 
+              src="/public/logo3.png" 
               alt="Kouly'Store Logo" 
               className="h-10 sm:h-20 w-auto object-contain transition-transform group-hover:scale-105"
             />

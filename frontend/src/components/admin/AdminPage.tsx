@@ -408,7 +408,7 @@ function AdminPage() {
               <div className="flex items-center">
                 <a href="/" className="flex items-center gap-3 group">
                   <img 
-                    src="/src/assets/logo4.png" 
+                    src="/public/logo4.png" 
                     alt="Kouly'Store Logo"
                     className="h-15 sm:h-45 w-auto object-contain transition-transform group-hover:scale-105"
                   />
