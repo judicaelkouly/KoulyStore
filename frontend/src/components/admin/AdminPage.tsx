@@ -20,6 +20,7 @@ import { MdOutlineProductionQuantityLimits } from "react-icons/md";
 import { TbCategoryPlus } from "react-icons/tb";
 import { PiFlagBannerFoldFill } from "react-icons/pi";
 import { Package } from "lucide-react";
+import logo from '../../assets/logo4.png'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
 const STORAGE_BASE_URL = API_BASE_URL.replace(/\/api\/?$/, "");
@@ -408,7 +409,7 @@ function AdminPage() {
               <div className="flex items-center">
                 <a href="/" className="flex items-center gap-3 group">
                   <img 
-                    src="/public/logo4.png" 
+                    src={logo}
                     alt="Kouly'Store Logo"
                     className="h-15 sm:h-45 w-auto object-contain transition-transform group-hover:scale-105"
                   />
