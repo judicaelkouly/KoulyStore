@@ -157,7 +157,7 @@ function UpdateCategory() {
     // Création du FormData
     const formData = new FormData();
     // 🔑 Method Spoofing Laravel pour autoriser l'envoi de fichiers multipart/form-data via PUT
-    formData.append("_method", "PUT");
+    //formData.append("_method", "PUT");
     formData.append("name", categoryName);
     formData.append("has_sizes", hasSizes ? "1" : "0");
 
