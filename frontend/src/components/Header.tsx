@@ -9,6 +9,7 @@ import {
   MdLocalOffer,
   MdPersonAdd
 } from "react-icons/md";
+import logo from '../assets/logo3.png'
 
 // URL de base de l'API (ex: https://ton-back.onrender.com/api ou http://localhost:8000/api)
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
@@ -142,7 +143,7 @@ function Header() {
         <div className="flex items-center">
          <a href="/" className="flex items-center gap-3 group">
             <img 
-              src="/public/logo3.png" 
+              src={logo}
               alt="Kouly'Store Logo" 
               className="h-10 sm:h-20 w-auto object-contain transition-transform group-hover:scale-105"
             />

@@ -1,3 +1,4 @@
+import logo from '../assets/logo4.png'
 function Footer() {
   return (
     <footer className='bg-gray-900 py-16 px-4 sm:px-6 lg:px-8 mt-12 w-full border-t border-white/5'>
@@ -10,7 +11,7 @@ function Footer() {
                        <div className="flex items-center">
                             <a href="/" className="flex items-center gap-3 group">
                                 <img 
-                                src="/src/assets/logo4.png" 
+                                src={logo}
                                 alt="Kouly'Store Logo"
                                 className="h-10 sm:h-20 w-auto object-contain transition-transform group-hover:scale-105"
 
