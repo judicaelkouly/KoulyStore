@@ -8,6 +8,7 @@ import {
   HiEyeSlash 
 } from 'react-icons/hi2';
 import logo from '../assets/logo3.png'
+import logo1 from '../assets/hero3.png'
 
 // URL de base de l'API (ex: https://ton-back.onrender.com/api ou http://localhost:8000/api)
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
@@ -296,7 +297,7 @@ function Register() {
         {/* COLONNE DROITE : IMAGE ADAPTÉE & COMPACTE */}
         <div className="hidden lg:block lg:w-1/2 relative ">
           <img 
-            src={logo}
+            src={logo1}
             alt="Shopping Expérience Kouly'Store" 
             className="w-full h-full object-cover opacity-90"
           />
