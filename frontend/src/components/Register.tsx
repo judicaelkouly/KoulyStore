@@ -103,10 +103,10 @@ function Register() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-gray-900 flex items-center justify-center p-4 sm:p-6 transition-colors">
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 sm:p-6 transition-colors">
       
       {/* CARD PRINCIPALE DIMENTIONNÉE */}
-      <div className="max-w-4xl w-full rounded-2xl md:rounded-3xl bg-white dark:bg-gray-800 shadow-xl border border-gray-100 dark:border-gray-700/50 flex overflow-hidden my-auto">
+      <div className="max-w-4xl w-full rounded-2xl md:rounded-3xl bg-white shadow-xl border border-gray-100 flex overflow-hidden my-auto">
         
         {/* COLONNE GAUCHE : FORMULAIRE */}
         <div className="w-full lg:w-1/2 p-6 sm:p-10 flex flex-col justify-center">
@@ -123,7 +123,7 @@ function Register() {
           </div>
 
           <div className="mt-6 flex flex-col items-center">
-            <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight text-center">
+            <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight text-center">
               Créer un compte
             </h1>
             <p className="text-xs text-gray-400 mt-1 text-center">Rejoignez-nous pour une expérience unique</p>
@@ -132,13 +132,13 @@ function Register() {
               
               {/* MESSAGES D'ALERTE */}
               {errors.general && (
-                <div className="mb-3 p-2.5 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/40 text-red-600 dark:text-red-400 text-xs text-center font-medium">
+                <div className="mb-3 p-2.5 rounded-xl bg-red-50  border border-red-200  text-red-600 text-xs text-center font-medium">
                   {errors.general}
                 </div>
               )}
 
               {successMessage && (
-                <div className="mb-3 p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/40 text-emerald-600 dark:text-emerald-400 text-xs text-center font-medium">
+                <div className="mb-3 p-2.5 rounded-xl bg-emerald-50 border border-emerald-200  text-emerald-600 text-xs text-center font-medium">
                   {successMessage}
                 </div>
               )}
@@ -148,7 +148,7 @@ function Register() {
                 
                 {/* NOM D'UTILISATEUR */}
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
                     Nom d'utilisateur
                   </label>
                   <div className="relative flex items-center">
@@ -160,7 +160,7 @@ function Register() {
                       type="text"
                       placeholder="John Doe"
                       required
-                      className="w-full pl-10 pr-4 py-2.5 rounded-xl font-medium bg-slate-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 placeholder-gray-400 text-xs sm:text-sm focus:outline-none focus:border-indigo-500 focus:bg-white dark:focus:bg-gray-700 text-slate-800 dark:text-white transition-all"
+                      className="w-full pl-10 pr-4 py-2.5 rounded-xl font-medium bg-slate-50  border border-gray-200 placeholder-gray-400 text-xs sm:text-sm focus:outline-none focus:border-indigo-500 focus:bg-white  text-slate-800 transition-all"
                     />
                   </div>
                   {errors.username && <p className="text-red-500 text-[11px] mt-1 ml-1">{errors.username[0]}</p>}
@@ -168,7 +168,7 @@ function Register() {
 
                 {/* EMAIL */}
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
                     Adresse e-mail
                   </label> 
                   <div className="relative flex items-center">
@@ -180,7 +180,7 @@ function Register() {
                       type="email"
                       placeholder="john.doe@example.com"
                       required
-                      className="w-full pl-10 pr-4 py-2.5 rounded-xl font-medium bg-slate-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 placeholder-gray-400 text-xs sm:text-sm focus:outline-none focus:border-indigo-500 focus:bg-white dark:focus:bg-gray-700 text-slate-800 dark:text-white transition-all"
+                      className="w-full pl-10 pr-4 py-2.5 rounded-xl font-medium bg-slate-50 border border-gray-200 placeholder-gray-400 text-xs sm:text-sm focus:outline-none focus:border-indigo-500 focus:bg-white  text-slate-800 transition-all"
                     />
                   </div>
                   {errors.email && <p className="text-red-500 text-[11px] mt-1 ml-1">{errors.email[0]}</p>}
@@ -188,7 +188,7 @@ function Register() {
 
                 {/* TELEPHONE (FACULTATIF) */}
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
                     Téléphone
                   </label>
                   <div className="relative flex items-center">
@@ -199,7 +199,7 @@ function Register() {
                       onChange={handleChange}
                       type="tel"
                       placeholder="+225 05 55 55 55 55"
-                      className="w-full pl-10 pr-4 py-2.5 rounded-xl font-medium bg-slate-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 placeholder-gray-400 text-xs sm:text-sm focus:outline-none focus:border-indigo-500 focus:bg-white dark:focus:bg-gray-700 text-slate-800 dark:text-white transition-all"
+                      className="w-full pl-10 pr-4 py-2.5 rounded-xl font-medium bg-slate-50 border border-gray-200  placeholder-gray-400 text-xs sm:text-sm focus:outline-none focus:border-indigo-500 focus:bg-white text-slate-800 transition-all"
                     />
                   </div>
                   {errors.phone && <p className="text-red-500 text-[11px] mt-1 ml-1">{errors.phone[0]}</p>}
@@ -207,7 +207,7 @@ function Register() {
 
                 {/* MOT DE PASSE */}
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
                     Mot de passe
                   </label>
                   <div className="relative flex items-center">
@@ -219,7 +219,7 @@ function Register() {
                       type={showPassword ? "text" : "password"}
                       placeholder="Min 6 caractères"
                       required
-                      className="w-full pl-10 pr-10 py-2.5 rounded-xl font-medium bg-slate-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 placeholder-gray-400 text-xs sm:text-sm focus:outline-none focus:border-indigo-500 focus:bg-white dark:focus:bg-gray-700 text-slate-800 dark:text-white transition-all"
+                      className="w-full pl-10 pr-10 py-2.5 rounded-xl font-medium bg-slate-50  border border-gray-200  placeholder-gray-400 text-xs sm:text-sm focus:outline-none focus:border-indigo-500 focus:bg-white text-slate-800 transition-all"
                     />
                     <button
                       type="button"
@@ -234,7 +234,7 @@ function Register() {
 
                 {/* CONFIRMATION MOT DE PASSE */}
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="block text-xs font-semibold text-gray-700  mb-1">
                     Confirmer le mot de passe
                   </label>
                   <div className="relative flex items-center">
@@ -246,7 +246,7 @@ function Register() {
                       type={showConfirmPassword ? "text" : "password"}
                       placeholder="Répétez le mot de passe"
                       required
-                      className="w-full pl-10 pr-10 py-2.5 rounded-xl font-medium bg-slate-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 placeholder-gray-400 text-xs sm:text-sm focus:outline-none focus:border-indigo-500 focus:bg-white dark:focus:bg-gray-700 text-slate-800 dark:text-white transition-all"
+                      className="w-full pl-10 pr-10 py-2.5 rounded-xl font-medium bg-slate-50  border border-gray-200  placeholder-gray-400 text-xs sm:text-sm focus:outline-none focus:border-indigo-500 focus:bg-white  text-slate-800 transition-all"
                     />
                     <button
                       type="button"
@@ -296,7 +296,7 @@ function Register() {
         {/* COLONNE DROITE : IMAGE ADAPTÉE & COMPACTE */}
         <div className="hidden lg:block lg:w-1/2 relative ">
           <img 
-            src="/src/assets/hero3.png" 
+            src={logo}
             alt="Shopping Expérience Kouly'Store" 
             className="w-full h-full object-cover opacity-90"
           />

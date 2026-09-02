@@ -328,7 +328,7 @@ function Details() {
   const hasOffer = Boolean(product?.promo_price && Number(product.promo_price) > 0);
 
   return (
-    <div className="bg-slate-50 dark:bg-gray-900 py-8 px-4 sm:px-6 lg:px-8 w-full transition-colors min-h-screen">
+    <div className="bg-slate-50 py-8 px-4 sm:px-6 lg:px-8 w-full transition-colors min-h-screen">
       
       {/* Toast Notification */}
       {notification && (
@@ -339,13 +339,13 @@ function Details() {
 
       {/* État de chargement */}
       {loading && (
-        <div className="max-w-6xl mx-auto bg-white dark:bg-gray-800 rounded-3xl p-8 animate-pulse flex flex-col lg:flex-row gap-8">
-          <div className="w-full lg:w-1/2 h-[400px] bg-slate-200 dark:bg-gray-700 rounded-2xl"></div>
+        <div className="max-w-6xl mx-auto bg-white  rounded-3xl p-8 animate-pulse flex flex-col lg:flex-row gap-8">
+          <div className="w-full lg:w-1/2 h-[400px] bg-slate-200 rounded-2xl"></div>
           <div className="w-full lg:w-1/2 flex flex-col gap-4">
-            <div className="h-6 bg-slate-200 dark:bg-gray-700 w-1/3 rounded"></div>
-            <div className="h-10 bg-slate-200 dark:bg-gray-700 w-3/4 rounded"></div>
-            <div className="h-12 bg-slate-200 dark:bg-gray-700 w-1/2 rounded"></div>
-            <div className="h-24 bg-slate-200 dark:bg-gray-700 w-full rounded"></div>
+            <div className="h-6 bg-slate-200  w-1/3 rounded"></div>
+            <div className="h-10 bg-slate-200  w-3/4 rounded"></div>
+            <div className="h-12 bg-slate-200  w-1/2 rounded"></div>
+            <div className="h-24 bg-slate-200  w-full rounded"></div>
           </div>
         </div>
       )}
@@ -367,12 +367,12 @@ function Details() {
       {/* Affichage des détails du produit */}
       {!loading && !error && product && (
         <div className="max-w-7xl mx-auto space-y-8">
-          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-gray-200/80 dark:border-gray-700/60 p-6 md:p-10">
+          <div className="bg-white rounded-3xl shadow-sm border border-gray-200/80 p-6 md:p-10">
             <div className="flex flex-col lg:flex-row gap-10">
               
               {/* ================= ZONE VISUELLE : Galerie Multi-Photos ================= */}
               <div className="flex-1 flex flex-col gap-4">
-                <div className="relative h-[380px] sm:h-[460px] rounded-2xl bg-slate-100 dark:bg-gray-700/50 overflow-hidden group border border-gray-100 dark:border-gray-700">
+                <div className="relative h-[380px] sm:h-[460px] rounded-2xl bg-slate-100 overflow-hidden group border border-gray-100">
                   {hasOffer && (
                     <span className="absolute top-4 left-4 bg-rose-500 text-white text-xs font-bold px-3 py-1.5 rounded-full z-10 shadow-sm">
                       PROMO
@@ -398,7 +398,7 @@ function Details() {
                         className={`relative w-20 h-20 rounded-xl overflow-hidden border-2 transition-all cursor-pointer shrink-0 ${
                           selectedImage === img
                             ? "border-indigo-600 ring-2 ring-indigo-600/30"
-                            : "border-gray-200 dark:border-gray-700 opacity-70 hover:opacity-100"
+                            : "border-gray-200 opacity-70 hover:opacity-100"
                         }`}
                       >
                         <img
@@ -415,22 +415,22 @@ function Details() {
               {/* ================= ZONE DÉTAILS PRODUIT ================= */}
               <div className="flex-1 flex flex-col justify-between">
                 <div>
-                  <div className="flex items-center justify-between text-xs font-semibold tracking-wider uppercase text-gray-400 dark:text-gray-400 mb-2">
+                  <div className="flex items-center justify-between text-xs font-semibold tracking-wider uppercase text-gray-400 mb-2">
                     <span>
                       Catégorie :{" "}
-                      <strong className="text-gray-700 dark:text-gray-200">
+                      <strong className="text-gray-700">
                         {categoryName}
                       </strong>
                     </span>
                   </div>
 
-                  <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white mb-3 tracking-tight">
+                  <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-3 tracking-tight">
                     {product.title}
                   </h1>
 
-                  <div className="flex items-center gap-4 mb-6 bg-slate-50 dark:bg-gray-700/40 p-3.5 rounded-2xl w-fit border border-gray-100 dark:border-gray-700">
+                  <div className="flex items-center gap-4 mb-6 bg-slate-50 p-3.5 rounded-2xl w-fit border border-gray-100">
                     <div className="flex items-baseline gap-2">
-                      <span className="text-2xl font-black text-indigo-600 dark:text-indigo-400">
+                      <span className="text-2xl font-black text-indigo-600">
                         {formatPrice(hasOffer ? product.promo_price! : product.price)}
                       </span>
                       {hasOffer && (
@@ -439,14 +439,14 @@ function Details() {
                         </span>
                       )}
                     </div>
-                    <div className="w-px h-5 bg-gray-300 dark:bg-gray-600"></div>
-                    <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+                    <div className="w-px h-5 bg-gray-300 "></div>
+                    <span className="text-xs font-medium text-emerald-600 flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse"></span>
                       {(product.stock ?? 1) > 0 ? "En Stock" : "Rupture de stock"}
                     </span>
                   </div>
 
-                  <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed mb-6 line-clamp-2">
+                  <p className="text-gray-600 text-sm leading-relaxed mb-6 line-clamp-2">
                     {product.shortDescription || product.description}
                   </p>
 
@@ -454,7 +454,7 @@ function Details() {
                   {sizes.length > 0 && (
                     <div className="mb-6">
                       <div className="flex justify-between items-center mb-2.5">
-                        <span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-gray-300">
+                        <span className="text-xs font-bold uppercase tracking-wider text-slate-700">
                           Choisir la Taille / Pointure :
                         </span>
                       </div>
@@ -467,7 +467,7 @@ function Details() {
                             className={`min-w-11 h-10 px-3 rounded-xl font-bold text-xs transition-all border cursor-pointer ${
                               selectedSize === size
                                 ? "bg-indigo-600 border-indigo-600 text-white shadow-sm scale-105"
-                                : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-slate-800 dark:text-white hover:border-gray-400"
+                                : "bg-white  border-gray-200 text-slate-800 hover:border-gray-400"
                             }`}
                           >
                             {size}
@@ -479,24 +479,24 @@ function Details() {
 
                   {/* SÉLECTEUR DE QUANTITÉ */}
                   <div className="mb-6">
-                    <span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-gray-300 block mb-2">
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-700 block mb-2">
                       Quantité :
                     </span>
-                    <div className="flex items-center border border-gray-200 dark:border-gray-700 rounded-xl w-fit bg-slate-50 dark:bg-gray-800">
+                    <div className="flex items-center border border-gray-200 rounded-xl w-fit bg-slate-50">
                       <button
                         type="button"
                         onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                        className="px-3.5 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-l-xl transition-colors font-bold"
+                        className="px-3.5 py-2 text-gray-600 hover:bg-gray-200 rounded-l-xl transition-colors font-bold"
                       >
                         -
                       </button>
-                      <span className="px-4 py-2 font-bold text-sm text-slate-900 dark:text-white">
+                      <span className="px-4 py-2 font-bold text-sm text-slate-900">
                         {quantity}
                       </span>
                       <button
                         type="button"
                         onClick={() => setQuantity(quantity + 1)}
-                        className="px-3.5 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-r-xl transition-colors font-bold"
+                        className="px-3.5 py-2 text-gray-600  hover:bg-gray-200 rounded-r-xl transition-colors font-bold"
                       >
                         +
                       </button>
@@ -509,7 +509,7 @@ function Details() {
                       type="button"
                       onClick={handleAddToCart}
                       disabled={addingToCart}
-                      className="w-full sm:w-1/2 border-2 border-indigo-600 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-gray-700 py-3.5 px-6 rounded-2xl font-bold text-sm transition-all shadow-sm active:scale-95 flex items-center justify-center gap-2"
+                      className="w-full sm:w-1/2 border-2 border-indigo-600 text-indigo-600 hover:bg-indigo-50 py-3.5 px-6 rounded-2xl font-bold text-sm transition-all shadow-sm active:scale-95 flex items-center justify-center gap-2"
                     >
                       <span>{addingToCart ? "Ajout..." : "Ajouter au Panier"}</span>
                     </button>
@@ -526,14 +526,14 @@ function Details() {
                 </div>
 
                 {/* ONGLETS DESCRIPTION & LIVRAISON */}
-                <div className="border-t border-gray-100 dark:border-gray-700/80 pt-6 mt-8">
-                  <div className="flex gap-6 border-b border-gray-100 dark:border-gray-700/80 text-sm mb-4">
+                <div className="border-t border-gray-100 pt-6 mt-8">
+                  <div className="flex gap-6 border-b border-gray-100 text-sm mb-4">
                     <button
                       type="button"
                       onClick={() => setActiveTab("description")}
                       className={`pb-2.5 font-bold transition-all relative cursor-pointer ${
                         activeTab === "description"
-                          ? "text-indigo-600 dark:text-indigo-400 after:absolute after:bottom-0 after:left-0 after:w-full after:h-0.5 after:bg-indigo-600"
+                          ? "text-indigo-600 after:absolute after:bottom-0 after:left-0 after:w-full after:h-0.5 after:bg-indigo-600"
                           : "text-gray-400 hover:text-gray-600"
                       }`}
                     >
@@ -544,7 +544,7 @@ function Details() {
                       onClick={() => setActiveTab("shipping")}
                       className={`pb-2.5 font-bold transition-all relative cursor-pointer ${
                         activeTab === "shipping"
-                          ? "text-indigo-600 dark:text-indigo-400 after:absolute after:bottom-0 after:left-0 after:w-full after:h-0.5 after:bg-indigo-600"
+                          ? "text-indigo-600 after:absolute after:bottom-0 after:left-0 after:w-full after:h-0.5 after:bg-indigo-600"
                           : "text-gray-400 hover:text-gray-600"
                       }`}
                     >
@@ -554,11 +554,11 @@ function Details() {
 
                   <div className="min-h-20">
                     {activeTab === "description" ? (
-                      <p className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm leading-relaxed whitespace-pre-line">
+                      <p className="text-gray-600 text-xs sm:text-sm leading-relaxed whitespace-pre-line">
                         {product.description}
                       </p>
                     ) : (
-                      <ul className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm leading-relaxed space-y-1.5 list-disc pl-4">
+                      <ul className="text-gray-600 text-xs sm:text-sm leading-relaxed space-y-1.5 list-disc pl-4">
                         <li>Livraison rapide en 24h à 48h partout en Côte d'Ivoire.</li>
                         <li>Paiement à la livraison accepté (Wave, Orange Money, MTN Money, Cash).</li>
                         <li>Retour gratuit sous 7 jours sous conditions.</li>
@@ -572,10 +572,10 @@ function Details() {
           </div>
 
           {/* ================= SECTION AVIS & NOTES CLIENTS ================= */}
-          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-gray-200/80 dark:border-gray-700/60 p-6 md:p-8">
+          <div className="bg-white rounded-3xl shadow-sm border border-gray-200/80 p-6 md:p-8">
             {/* Header de la section */}
-            <div className="flex items-center justify-between pb-6 mb-6 border-b border-gray-100 dark:border-gray-700">
-              <h2 className="text-lg md:text-xl font-bold text-gray-900 dark:text-white">
+            <div className="flex items-center justify-between pb-6 mb-6 border-b border-gray-100">
+              <h2 className="text-lg md:text-xl font-bold text-gray-900">
                 Commentaires clients vérifiés
               </h2>
               <button 
@@ -594,20 +594,20 @@ function Details() {
               <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
                 
                 {/* COLONNE GAUCHE : Statistique globale & Répartition */}
-                <div className="md:col-span-5 lg:col-span-4 border-b md:border-b-0 md:border-r border-gray-100 dark:border-gray-700 pb-6 md:pb-0 md:pr-8">
-                  <div className="text-xs font-bold uppercase text-gray-500 dark:text-gray-400 tracking-wider mb-4">
+                <div className="md:col-span-5 lg:col-span-4 border-b md:border-b-0 md:border-r border-gray-100 pb-6 md:pb-0 md:pr-8">
+                  <div className="text-xs font-bold uppercase text-gray-500 tracking-wider mb-4">
                     AVIS VÉRIFIÉS ({reviewsData.total_reviews})
                   </div>
 
                   {/* Bloc Box Moyenne Note */}
-                  <div className="bg-slate-100/80 dark:bg-gray-700/40 rounded-2xl p-6 text-center mb-6">
+                  <div className="bg-slate-100/80 rounded-2xl p-6 text-center mb-6">
                     <div className="text-4xl font-extrabold text-amber-500 mb-2">
                       {reviewsData.average_rating.toFixed(1)}<span className="text-2xl text-gray-400">/5</span>
                     </div>
                     <div className="flex justify-center mb-2">
                       {renderStars(reviewsData.average_rating)}
                     </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                    <div className="text-xs text-gray-500 font-medium">
                       {reviewsData.total_reviews} avis vérifiés
                     </div>
                   </div>
@@ -622,10 +622,10 @@ function Details() {
 
                       return (
                         <div key={starKey} className="flex items-center gap-2 text-xs">
-                          <span className="w-3 text-gray-700 dark:text-gray-300 font-bold">{starKey}</span>
+                          <span className="w-3 text-gray-700 font-bold">{starKey}</span>
                           <FaStar className="text-amber-400 text-xs shrink-0" />
                           <span className="w-8 text-gray-400 text-right font-medium">({count})</span>
-                          <div className="flex-1 bg-gray-200 dark:bg-gray-700 h-2 rounded-full overflow-hidden">
+                          <div className="flex-1 bg-gray-200 h-2 rounded-full overflow-hidden">
                             <div 
                               className="bg-amber-400 h-full rounded-full transition-all duration-500" 
                               style={{ width: `${percentage}%` }}
@@ -639,7 +639,7 @@ function Details() {
 
                 {/* COLONNE DROITE : Liste des commentaires */}
                 <div className="md:col-span-7 lg:col-span-8">
-                  <div className="text-xs font-bold uppercase text-gray-500 dark:text-gray-400 tracking-wider mb-6">
+                  <div className="text-xs font-bold uppercase text-gray-500 tracking-wider mb-6">
                     COMMENTAIRES ({reviewsData.reviews.length})
                   </div>
 
@@ -648,7 +648,7 @@ function Details() {
                       Aucun avis pour le moment. Soyez le premier à donner votre avis après votre achat !
                     </div>
                   ) : (
-                    <div className="divide-y divide-gray-100 dark:divide-gray-700/80 space-y-6">
+                    <div className="divide-y divide-gray-100 space-y-6">
                       {reviewsData.reviews.map((rev) => {
                         const authorName = rev.user?.username || rev.user?.name || "Client vérifié";
 
@@ -661,14 +661,14 @@ function Details() {
 
                             {/* Titre de l'avis */}
                             {rev.title && (
-                              <h4 className="font-extrabold text-sm text-gray-900 dark:text-white mb-1.5">
+                              <h4 className="font-extrabold text-sm text-gray-900 mb-1.5">
                                 {rev.title}
                               </h4>
                             )}
 
                             {/* Contenu / Commentaire */}
                             {rev.comment && (
-                              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 leading-relaxed mb-3">
+                              <p className="text-xs sm:text-sm text-gray-600 leading-relaxed mb-3">
                                 {rev.comment}
                               </p>
                             )}
@@ -678,12 +678,12 @@ function Details() {
                               <div>
                                 <span>{formatDate(rev.created_at)}</span>
                                 <span className="mx-1.5">par</span>
-                                <span className="font-semibold text-gray-700 dark:text-gray-300">
+                                <span className="font-semibold text-gray-700">
                                   {authorName}
                                 </span>
                               </div>
 
-                              <div className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
+                              <div className="flex items-center gap-1 text-emerald-600 font-medium">
                                 <FaCheckCircle className="text-xs" />
                                 <span>Achat vérifié</span>
                               </div>
