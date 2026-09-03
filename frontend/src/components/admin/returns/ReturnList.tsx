@@ -3,6 +3,16 @@ import { useState, useEffect } from "react";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
 const STORAGE_BASE_URL = API_BASE_URL.replace(/\/api\/?$/, "");
 
+const getImageUrl = (imagePath: string | null): string | null => {
+  if (!imagePath) return null;
+  // Si c'est déjà une URL complète (Cloudinary), on la retourne telle quelle
+  if (imagePath.startsWith("http://") || imagePath.startsWith("https://")) {
+    return imagePath;
+  }
+  // Sinon (ancien format), on reconstruit l'ancienne URL (probablement cassée, mais cohérent)
+  return `${STORAGE_BASE_URL}/storage/${imagePath}`;
+};
+
 export interface ReturnRequest {
   id: number;
   order_number: string;
@@ -303,14 +313,14 @@ function ReturnList({ onReturnsUpdated }: ReturnListProps) {
                     {/* Photo de Preuve Miniature */}
                     <td className="py-3 px-4 text-center">
                       {item.image_path ? (
-                        <img
-                          src={`${STORAGE_BASE_URL}/storage/${item.image_path}`}
-                          alt="Preuve produit"
-                          className="w-10 h-10 object-cover rounded border border-gray-300 shadow-sm mx-auto"
-                        />
-                      ) : (
-                        <span className="text-xs text-gray-400 italic">Aucune</span>
-                      )}
+                          <img
+                            src={getImageUrl(item.image_path) ?? undefined}
+                            alt="Preuve produit"
+                            className="w-10 h-10 object-cover rounded border border-gray-300 shadow-sm mx-auto"
+                          />
+                        ) : (
+                          <span className="text-xs text-gray-400 italic">Aucune</span>
+                        )}
                     </td>
 
                     {/* Statut Actuel */}
@@ -465,30 +475,30 @@ function ReturnList({ onReturnsUpdated }: ReturnListProps) {
             </div>
 
             {/* Photo de preuve grand format */}
-            {selectedReturn.image_path ? (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs text-gray-400 font-bold uppercase">Photo de preuve jointe</p>
-                  <a
-                    href={`${STORAGE_BASE_URL}/storage/${selectedReturn.image_path}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-xs text-indigo-600 font-bold hover:underline"
-                  >
-                    Ouvrir en plein écran ↗
-                  </a>
-                </div>
-                <div className="bg-gray-900/5 p-2 rounded-xl border border-gray-200 flex justify-center">
-                  <img
-                    src={`${STORAGE_BASE_URL}/storage/${selectedReturn.image_path}`}
-                    alt="Preuve produit grand format"
-                    className="max-h-80 w-auto object-contain rounded-lg shadow-md"
-                  />
-                </div>
+           {selectedReturn.image_path ? (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-gray-400 font-bold uppercase">Photo de preuve jointe</p>
+                <a
+                  href={getImageUrl(selectedReturn.image_path) ?? undefined}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-xs text-indigo-600 font-bold hover:underline"
+                >
+                  Ouvrir en plein écran ↗
+                </a>
               </div>
-            ) : (
-              <p className="text-xs text-gray-400 italic">Aucune image jointe à cette demande.</p>
-            )}
+              <div className="bg-gray-900/5 p-2 rounded-xl border border-gray-200 flex justify-center">
+                <img
+                  src={getImageUrl(selectedReturn.image_path) ?? undefined}
+                  alt="Preuve produit grand format"
+                  className="max-h-80 w-auto object-contain rounded-lg shadow-md"
+                />
+              </div>
+            </div>
+          ) : (
+            <p className="text-xs text-gray-400 italic">Aucune image jointe à cette demande.</p>
+          )}
 
             {/* Modifier le statut directement depuis la modale */}
             <div className="pt-4 border-t border-gray-200 flex items-center justify-between">
