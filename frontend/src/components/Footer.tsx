@@ -35,7 +35,7 @@ function Footer() {
           </div>
 
           {/* Colonne 1 : Navigation */}
-          <div className="col-span-1 md:w-[20%] lg:w-[15%] flex flex-col items-start text-left">
+          <div className="col-span-1 md:w-[20%] lg:w-[15%] flex flex-col items-center text-left">
             <h3 className="text-xs sm:text-sm text-white font-semibold tracking-wider uppercase">Navigation</h3>
             <div className="flex flex-col gap-2.5 mt-4">
               <a href="#" className="text-sm text-gray-400 hover:text-indigo-400 transition-colors">Accueil</a>
@@ -47,7 +47,7 @@ function Footer() {
           </div>
 
           {/* Colonne 2 : Réseaux Sociaux */}
-          <div className="col-span-1 md:w-[20%] lg:w-[15%] flex flex-col items-start text-left">
+          <div className="col-span-1 md:w-[20%] lg:w-[15%] flex flex-col items-center text-left">
             <h3 className="text-xs sm:text-sm text-white font-semibold tracking-wider uppercase">Suivez-nous</h3>
             <div className="flex flex-col gap-2.5 mt-4">
               <a href="#" className="text-sm text-gray-400 hover:text-indigo-400 transition-colors">X (Twitter)</a>
@@ -58,7 +58,7 @@ function Footer() {
           </div>
 
           {/* Section Newsletter */}
-          <div className="col-span-2 md:w-[45%] lg:w-[28%] flex flex-col items-start text-left">
+          <div className="col-span-2 md:w-[45%] lg:w-[28%] flex flex-col items-center text-left">
             <h3 className="text-xs sm:text-sm text-white font-semibold tracking-wider uppercase">Restez informé</h3>
             <p className="text-xs text-gray-400 mt-2">Inscrivez-vous pour ne manquer aucune offre exclusive.</p>
             
