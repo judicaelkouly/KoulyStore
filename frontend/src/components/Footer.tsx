@@ -5,16 +5,14 @@ function Footer() {
   const [email, setEmail] = useState('');
   const [newsletterMessage, setNewsletterMessage] = useState('');
 
-  const handleNewsletterSubmit = (e) => {
-    e.preventDefault();
-    if (!email) return;
+ const handleNewsletterSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  e.preventDefault();
+  if (!email) return;
 
-    // Affiche le message d'information
-    setNewsletterMessage("Les inscriptions à la newsletter ne sont actuellement pas disponibles. Nous vous informerons dès que possible lorsque celles-ci seront de nouveau ouvertes.");
+  setNewsletterMessage("Les inscriptions à la newsletter ne sont actuellement pas disponibles. Nous vous informerons dès que possible lorsque celles-ci seront de nouveau ouvertes.");
+  setEmail('');
+};
 
-    // Optionnel : Réinitialise le champ email après soumission
-    setEmail('');
-  };
 
   return (
     <footer className="bg-gray-900 py-12 px-4 sm:px-6 lg:px-8 mt-12 w-full border-t border-white/5">
@@ -68,14 +66,15 @@ function Footer() {
               <input 
                 type="email" 
                 value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value);
-                  if (newsletterMessage) setNewsletterMessage(''); // Masque le message si l'utilisateur retape
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                    setEmail(e.target.value);
+                    if (newsletterMessage) setNewsletterMessage('');
                 }}
                 placeholder="Votre e-mail..." 
                 className="w-full h-full pl-5 outline-none text-sm bg-transparent text-white placeholder-gray-500" 
                 required 
-              />
+                />
+
               <button 
                 type="submit" 
                 className="bg-indigo-600 hover:bg-indigo-700 active:scale-95 transition-all px-5 h-9 rounded-full text-xs font-semibold text-white cursor-pointer mr-1.5 flex-shrink-0"
