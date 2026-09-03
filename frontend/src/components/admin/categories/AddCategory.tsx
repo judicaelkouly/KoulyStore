@@ -45,7 +45,7 @@ function AddCategory() {
     setErrorMessage(null);
     setFieldErrors({});
 
-       // 1. Calcul des tailles
+       //  Calcul des tailles
     const computedSizes = hasSizes
       ? sizeType === "vêtements"
         ? ["XXS","XS", "S", "M", "L", "XL", "XXL","3XL", "4XL"]
@@ -54,12 +54,12 @@ function AddCategory() {
         : customSizes.split(",").map((s) => s.trim()).filter((s) => s !== "")
       : [];
 
-    // 2. Construction de FormData
+    //  Construction de FormData
     const formData = new FormData();
     formData.append("name", categoryName);
     formData.append("has_sizes", hasSizes ? "1" : "0");
 
-    // 🔑 Astuce : Envoyer le tableau 'sizes' au format array FormData (sizes[])
+    //  Envoyer le tableau 'sizes' au format array FormData (sizes[])
     if (computedSizes.length > 0) {
       computedSizes.forEach((size) => {
         formData.append("sizes[]", size);
@@ -72,14 +72,13 @@ function AddCategory() {
 
 
     try {
-      // 3. Appel de l'API Laravel avec les credentials pour le cookie Sanctum
+      //  Appel de l'API Laravel avec les credentials pour le cookie Sanctum
       const response = await fetch(`${API_BASE_URL}/admin/categories`, {
         method: "POST",
         headers: {
           "Accept": "application/json",
-          // Ne PAS mettre 'Content-Type', le navigateur s'en charge avec les boundaries FormData
         },
-        credentials: "include", // 🔑 Indispensable pour la session Admin Sanctum
+        credentials: "include",
         body: formData,
       });
 

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 
-// Configuration dynamique des URL d'API et de stockage
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
 const STORAGE_BASE_URL = API_BASE_URL.replace(/\/api\/?$/, "");
 
@@ -10,7 +9,7 @@ interface ValidationError {
 }
 
 function UpdateCategory() {
-  const { id } = useParams<{ id: string }>(); // Récupère l'ID passé dans l'URL (ex: /admin/edit-category/3)
+  const { id } = useParams<{ id: string }>(); 
   const navigate = useNavigate();
 
   // ÉTATS DU FORMULAIRE
@@ -156,7 +155,7 @@ function UpdateCategory() {
 
     // Création du FormData
     const formData = new FormData();
-    // 🔑 Method Spoofing Laravel pour autoriser l'envoi de fichiers multipart/form-data via PUT
+    // Method Spoofing Laravel pour autoriser l'envoi de fichiers multipart/form-data via PUT
     //formData.append("_method", "PUT");
     formData.append("name", categoryName);
     formData.append("has_sizes", hasSizes ? "1" : "0");
@@ -173,7 +172,7 @@ function UpdateCategory() {
 
     try {
       const response = await fetch(`${API_BASE_URL}/admin/categories/${id}`, {
-        method: "POST", // Method Spoofing Laravel : POST avec _method = PUT
+        method: "POST", 
         headers: getAuthHeaders(),
         credentials: "include",
         body: formData,

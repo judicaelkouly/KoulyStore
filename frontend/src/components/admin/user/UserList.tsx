@@ -24,7 +24,7 @@ function UserList() {
   // État pour la barre de recherche
   const [searchTerm, setSearchTerm] = useState<string>("");
 
-  // 📄 GESTION DE LA PAGINATION (20 par page)
+  //  GESTION DE LA PAGINATION (20 par page)
   const [currentPage, setCurrentPage] = useState<number>(1);
   const itemsPerPage = 20;
 
@@ -141,7 +141,7 @@ function UserList() {
     );
   });
 
-  // 📄 CALCUL DES UTILISATEURS POUR LA PAGE ACTIVE
+  //  CALCUL DES UTILISATEURS POUR LA PAGE ACTIVE
   const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
@@ -345,7 +345,7 @@ function UserList() {
         </table>
       </div>
 
-      {/* 📄 CONTRÔLES DE PAGINATION */}
+      {/*  CONTRÔLES DE PAGINATION */}
       {!loading && !error && filteredUsers.length > 0 && (
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6 pt-4 border-t border-gray-200 bg-white/10 p-4 rounded-lg">
           <div>

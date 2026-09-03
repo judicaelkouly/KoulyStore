@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 
-// Configuration dynamique de l'URL d'API
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
 
 // Interfaces TypeScript
@@ -78,7 +77,7 @@ function AddProduct() {
     };
   };
 
-  // 📥 Récupération des catégories depuis l'API Backend
+  //  Récupération des catégories depuis l'API Backend
   useEffect(() => {
     const fetchCategories = async () => {
       try {

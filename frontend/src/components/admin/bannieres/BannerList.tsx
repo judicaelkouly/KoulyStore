@@ -100,7 +100,6 @@ function BannerList() {
 
       const headers: Record<string, string> = {
         Accept: "application/json",
-        // N.B: Ne PAS définir Content-Type avec FormData, le navigateur le gère seul avec le boundary
       };
       if (xsrfToken) headers["X-XSRF-TOKEN"] = xsrfToken;
 

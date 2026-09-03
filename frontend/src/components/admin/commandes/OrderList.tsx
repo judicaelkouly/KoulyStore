@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 
-// Configuration dynamique des URL d'API et de stockage
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
 const STORAGE_BASE_URL = API_BASE_URL.replace(/\/api\/?$/, "");
 
@@ -69,7 +68,7 @@ function OrderList({ onOrdersUpdated }: OrderListProps) {
   // État pour la barre de recherche
   const [searchTerm, setSearchTerm] = useState<string>("");
 
-  // 📄 GESTION DE LA PAGINATION (20 par page)
+  //  GESTION DE LA PAGINATION (20 par page)
   const [currentPage, setCurrentPage] = useState<number>(1);
   const itemsPerPage = 20;
 
@@ -240,7 +239,7 @@ function OrderList({ onOrdersUpdated }: OrderListProps) {
     );
   });
 
-  // 📄 CALCUL DES COMMANDES POUR LA PAGE ACTIVE
+  //  CALCUL DES COMMANDES POUR LA PAGE ACTIVE
   const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
@@ -551,7 +550,7 @@ function OrderList({ onOrdersUpdated }: OrderListProps) {
         </div>
       )}
 
-      {/* 📄 CONTRÔLES DE PAGINATION */}
+      {/*  CONTRÔLES DE PAGINATION */}
       {!loading && !error && filteredOrders.length > 0 && (
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6 pt-4 border-t border-gray-200">
           <div>

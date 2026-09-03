@@ -11,7 +11,6 @@ import {
 } from "react-icons/md";
 import logo from '../assets/logo3.png'
 
-// URL de base de l'API (ex: https://ton-back.onrender.com/api ou http://localhost:8000/api)
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
 
 export interface SearchProduct {

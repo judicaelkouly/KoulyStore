@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
-// Configuration dynamique des URL d'API et de stockage
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
 const STORAGE_BASE_URL = API_BASE_URL.replace(/\/api\/?$/, "");
 
@@ -21,7 +20,7 @@ function CategoryList() {
   // État pour la barre de recherche
   const [searchTerm, setSearchTerm] = useState<string>("");
 
-  // 📄 GESTION DE LA PAGINATION (20 par page)
+  //  GESTION DE LA PAGINATION (20 par page)
   const [currentPage, setCurrentPage] = useState<number>(1);
   const itemsPerPage = 20;
 
@@ -45,7 +44,7 @@ function CategoryList() {
     };
   };
 
-  // 1. Récupération des catégories depuis le Backend
+  //  Récupération des catégories depuis le Backend
   const fetchCategories = async () => {
     setLoading(true);
     setError(null);
@@ -76,7 +75,7 @@ function CategoryList() {
     fetchCategories();
   }, []);
 
-  // 2. Gestion de la suppression d'une catégorie
+  //  Gestion de la suppression d'une catégorie
   const handleDelete = async (id: number) => {
     if (!window.confirm("Êtes-vous sûr de vouloir supprimer cette catégorie ?")) {
       return;
@@ -107,7 +106,7 @@ function CategoryList() {
     category.name.toLowerCase().includes(searchTerm.trim().toLowerCase())
   );
 
-  // 📄 CALCUL DES CATÉGORIES POUR LA PAGE ACTIVE
+  // CALCUL DES CATÉGORIES POUR LA PAGE ACTIVE
   const totalPages = Math.ceil(filteredCategories.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
@@ -316,7 +315,7 @@ function CategoryList() {
         </table>
       </div>
 
-      {/* 📄 CONTRÔLES DE PAGINATION */}
+      {/*  CONTRÔLES DE PAGINATION */}
       {!loading && !error && filteredCategories.length > 0 && (
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6">
           <div>

@@ -5,7 +5,6 @@ import { FaTachometerAlt, FaStar, FaUser } from "react-icons/fa";
 import { MdShoppingCart } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 
-// Configuration dynamique de l'API et du stockage
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
 const STORAGE_BASE_URL = API_BASE_URL.replace(/\/api\/?$/, "");
 

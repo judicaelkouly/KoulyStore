@@ -5,9 +5,7 @@ import Products from "./Products";
 import Footer from "./Footer";
 import { BiSolidCategoryAlt } from "react-icons/bi";
 
-// URL de base de l'API (ex: https://ton-back.onrender.com/api ou http://localhost:8000/api)
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
-// URL hôte pour les images stockées (ex: https://ton-back.onrender.com)
 const API_HOST_URL = API_BASE_URL.replace(/\/api\/?$/, "");
 
 
@@ -36,15 +34,15 @@ function Dashboard() {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const productsSectionRef = useRef<HTMLElement>(null);
 
-  // 1. ÉTAT D'AUTHENTIFICATION & UTILISATEUR
+  // ÉTAT D'AUTHENTIFICATION & UTILISATEUR
   const [user, setUser] = useState<any | null>(null);
   const [checkingAuth, setCheckingAuth] = useState<boolean>(true);
 
-  // 2. ÉTAT DES CATÉGORIES DEPUIS L'API
+  // ÉTAT DES CATÉGORIES DEPUIS L'API
   const [categories, setCategories] = useState<Category[]>([]);
   const [loadingCategories, setLoadingCategories] = useState<boolean>(true);
 
-  // 3. ÉTAT DES BANNIÈRES DYNAMIQUES DEPUIS L'API
+  // ÉTAT DES BANNIÈRES DYNAMIQUES DEPUIS L'API
   const [banners, setBanners] = useState<BannerSlide[]>([]);
   const [loadingBanners, setLoadingBanners] = useState<boolean>(true);
 
@@ -54,10 +52,10 @@ function Dashboard() {
   const [isPaused, setIsPaused] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>("");
   
-  // 🎯 ÉTAT DE LA CATÉGORIE SÉLECTIONNÉE
+  // ÉTAT DE LA CATÉGORIE SÉLECTIONNÉE
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
 
-  // ================= VÉRIFICATION DE L'AUTHENTIFICATION =================
+  // VÉRIFICATION DE L'AUTHENTIFICATION
   useEffect(() => {
     const checkUserAuth = async () => {
       try {
@@ -83,7 +81,7 @@ function Dashboard() {
     checkUserAuth();
   }, []);
 
-  // ================= RÉCUPÉRATION DES CATÉGORIES (API) =================
+  // RÉCUPÉRATION DES CATÉGORIES (API) 
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -106,7 +104,7 @@ function Dashboard() {
     fetchCategories();
   }, []);
 
-  // ================= RÉCUPÉRATION DES BANNIÈRES DYNAMIQUES (API) =================
+  // RÉCUPÉRATION DES BANNIÈRES DYNAMIQUES (API)
   useEffect(() => {
     const fetchBanners = async () => {
       try {
@@ -143,7 +141,7 @@ function Dashboard() {
     fetchBanners();
   }, []);
 
-  // ================= AUTOPLAY DU CARROUSEL =================
+  // AUTOPLAY DU CARROUSEL
   useEffect(() => {
     if (isPaused || banners.length === 0) return;
     const timer = setInterval(() => {
@@ -185,7 +183,7 @@ function Dashboard() {
     }
   };
 
-  // ================= GESTION DE LA SELECTION DE CATEGORIE =================
+  // GESTION DE LA SELECTION DE CATEGORIE
   const handleSelectCategory = (cat: Category | null) => {
     if (selectedCategory?.id === cat?.id) {
       setSelectedCategory(null);
@@ -199,7 +197,7 @@ function Dashboard() {
     }
   };
 
-  // ================= GESTION DU SCROLL DE RECHERCHE =================
+  // GESTION DU SCROLL DE RECHERCHE
   const handleSearchSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (productsSectionRef.current) {
@@ -220,7 +218,7 @@ function Dashboard() {
         <Header />
       )}
 
-      {/* ================= SECTION HERO + CATÉGORIES ================= */}
+      {/*SECTION HERO + CATÉGORIES*/}
       <section className="pt-6 px-4 mx-auto">
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 items-start">
           

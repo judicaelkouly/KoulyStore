@@ -2,11 +2,10 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaStar, FaRegStar } from "react-icons/fa6";
 
-// URL de base dynamique pour l'API
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
 const STORAGE_BASE_URL = API_BASE_URL.replace(/\/api\/?$/, "");
 
-// 1. Interfaces TypeScript pour les produits et catégories
+//  Interfaces TypeScript pour les produits et catégories
 export interface Category {
   id: number | string;
   name: string;
@@ -99,7 +98,7 @@ function Products({
     }
   };
 
-  // 📥 Récupération initiale ou réinitialisation lors d'un changement de filtre (page = 1)
+  //  Récupération initiale ou réinitialisation lors d'un changement de filtre (page = 1)
   useEffect(() => {
     setPage(1);
     setProducts([]);

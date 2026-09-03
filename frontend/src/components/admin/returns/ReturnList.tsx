@@ -36,7 +36,7 @@ function ReturnList({ onReturnsUpdated }: ReturnListProps) {
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [updatingId, setUpdatingId] = useState<number | null>(null);
 
-  // 📄 GESTION DE LA PAGINATION (20 par page)
+  // GESTION DE LA PAGINATION (20 par page)
   const [currentPage, setCurrentPage] = useState<number>(1);
   const itemsPerPage = 20;
 
@@ -168,7 +168,7 @@ function ReturnList({ onReturnsUpdated }: ReturnListProps) {
     );
   });
 
-  // 📄 CALCUL DES RETOURS POUR LA PAGE ACTIVE
+  //  CALCUL DES RETOURS POUR LA PAGE ACTIVE
   const totalPages = Math.ceil(filteredReturns.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
@@ -378,7 +378,7 @@ function ReturnList({ onReturnsUpdated }: ReturnListProps) {
         </table>
       </div>
 
-      {/* 📄 CONTRÔLES DE PAGINATION */}
+      {/*  CONTRÔLES DE PAGINATION */}
       {!loading && !error && filteredReturns.length > 0 && (
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6 pt-4 border-t border-gray-200">
           <div>

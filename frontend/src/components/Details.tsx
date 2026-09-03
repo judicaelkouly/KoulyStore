@@ -3,9 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { FaMoneyBillTransfer, FaStar, FaRegStar } from "react-icons/fa6";
 import { FaCheckCircle } from "react-icons/fa";
 
-// URL de base de l'API (ex: https://ton-back.onrender.com/api ou http://localhost:8000/api)
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
-// URL hôte pour les images (ex: https://ton-back.onrender.com)
 const API_HOST_URL = API_BASE_URL.replace(/\/api\/?$/, "");
 
 // Interfaces TypeScript
@@ -80,7 +78,7 @@ function Details() {
   const [addingToCart, setAddingToCart] = useState<boolean>(false);
   const [notification, setNotification] = useState<string | null>(null);
 
-  // 📥 Fetch du produit & des avis selon l'ID
+  // Fetch du produit & des avis selon l'ID
   useEffect(() => {
     const fetchProductDetails = async () => {
       const urlParams = new URLSearchParams(window.location.search);
@@ -258,7 +256,7 @@ function Details() {
         }),
       });
 
-      // 🔒 Redirection automatique si non authentifié (401 / 403)
+      //  Redirection automatique si non authentifié (401 / 403)
       if (response.status === 401 || response.status === 403) {
         showNotification("Veuillez vous connecter pour ajouter des articles au panier.");
         setTimeout(() => {
@@ -370,7 +368,7 @@ function Details() {
           <div className="bg-white rounded-3xl shadow-sm border border-gray-200/80 p-6 md:p-10">
             <div className="flex flex-col lg:flex-row gap-10">
               
-              {/* ================= ZONE VISUELLE : Galerie Multi-Photos ================= */}
+              {/* ZONE VISUELLE : Galerie Multi-Photos */}
               <div className="flex-1 flex flex-col gap-4">
                 <div className="relative h-[380px] sm:h-[460px] rounded-2xl bg-slate-100 overflow-hidden group border border-gray-100">
                   {hasOffer && (
@@ -412,7 +410,7 @@ function Details() {
                 )}
               </div>
 
-              {/* ================= ZONE DÉTAILS PRODUIT ================= */}
+              {/* ZONE DÉTAILS PRODUIT */}
               <div className="flex-1 flex flex-col justify-between">
                 <div>
                   <div className="flex items-center justify-between text-xs font-semibold tracking-wider uppercase text-gray-400 mb-2">
@@ -571,7 +569,7 @@ function Details() {
             </div>
           </div>
 
-          {/* ================= SECTION AVIS & NOTES CLIENTS ================= */}
+          {/*  SECTION AVIS & NOTES CLIENTS */}
           <div className="bg-white rounded-3xl shadow-sm border border-gray-200/80 p-6 md:p-8">
             {/* Header de la section */}
             <div className="flex items-center justify-between pb-6 mb-6 border-b border-gray-100">

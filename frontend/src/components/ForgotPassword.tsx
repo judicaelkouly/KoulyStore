@@ -6,7 +6,6 @@ import {
   HiEyeSlash 
 } from "react-icons/hi2";
 
-// URL de base de l'API (ex: https://ton-back.onrender.com/api ou http://localhost:8000/api)
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
 
 type Step = "EMAIL" | "CODE" | "NEW_PASSWORD";
@@ -42,7 +41,7 @@ export default function ForgotPassword() {
     return "";
   };
 
-  // 1️⃣ ÉTAPE 1 : Demande du code par e-mail
+  //  Demande du code par e-mail
   const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -76,7 +75,7 @@ export default function ForgotPassword() {
     }
   };
 
-  // 2️⃣ ÉTAPE 2 : Vérification du code OTP
+  // Vérification du code OTP
   const handleVerifyCode = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -110,7 +109,7 @@ export default function ForgotPassword() {
     }
   };
 
-  // 3️⃣ ÉTAPE 3 : Choix du nouveau mot de passe
+  // Choix du nouveau mot de passe
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);

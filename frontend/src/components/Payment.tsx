@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
-// URL de base de l'API (ex: https://ton-back.onrender.com/api ou http://localhost:8000/api)
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
 
-// 1. Interface OrderItem incluant la taille
+//  Interface OrderItem incluant la taille
 export interface OrderItem {
   id: number | string;
   name: string;
@@ -60,7 +59,7 @@ function Payment() {
     return "";
   };
 
-  // 1. Redirection si panier vide
+  //  Redirection si panier vide
   useEffect(() => {
     if (!items || items.length === 0) {
       alert("Aucun produit sélectionné pour le paiement.");
@@ -68,7 +67,7 @@ function Payment() {
     }
   }, [items, navigate]);
 
-  // 2. Vérification de l'authentification et pré-remplissage des infos au chargement
+  // Vérification de l'authentification et pré-remplissage des infos au chargement
   useEffect(() => {
     const checkUserAuth = async () => {
       try {
@@ -125,7 +124,7 @@ function Payment() {
     setClient((prev) => ({ ...prev, [name]: value }));
   };
 
-  // 3. Soumission à l'API backend avec interception du status 401
+  //  Soumission à l'API backend avec interception du status 401
   const handlePaymentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -161,7 +160,7 @@ function Payment() {
         body: JSON.stringify(orderPayload),
       });
 
-      // 🛑 Prise en charge propre du cas non-authentifié (401)
+      // Prise en charge du cas non-authentifié (401)
       if (response.status === 401) {
         navigate("/login", {
           state: {
