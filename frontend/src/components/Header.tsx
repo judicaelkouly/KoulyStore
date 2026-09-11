@@ -130,7 +130,7 @@ function Header() {
     if (searchQuery.trim()) {
       setShowDropdown(false);
       setIsMobileMenuOpen(false);
-      window.location.href = `/shop?search=${encodeURIComponent(searchQuery.trim())}`;
+      window.location.href = `#products?search=${encodeURIComponent(searchQuery.trim())}`;
     }
   };
 
