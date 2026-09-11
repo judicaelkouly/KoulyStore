@@ -22,7 +22,6 @@ import {
   X, 
   DollarSign, 
   TrendingUp, 
-  Bell, 
   RefreshCw,
   ChevronRight,
   ShieldCheck,
