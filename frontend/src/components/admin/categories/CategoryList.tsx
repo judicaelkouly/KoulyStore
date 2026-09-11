@@ -1,10 +1,23 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import {
+  Search,
+  Plus,
+  Trash2,
+  Edit3,
+  FolderTree,
+  RefreshCw,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  AlertCircle,
+  ArrowLeft,
+  ImageOff
+} from "lucide-react";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
 const STORAGE_BASE_URL = API_BASE_URL.replace(/\/api\/?$/, "");
 
-// Interface TypeScript pour typer une catégorie
 interface Category {
   id: number;
   name: string;
@@ -16,15 +29,15 @@ function CategoryList() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
-  // État pour la barre de recherche
+  // Recherche
   const [searchTerm, setSearchTerm] = useState<string>("");
 
-  //  GESTION DE LA PAGINATION (20 par page)
+  // Pagination (15 par page)
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const itemsPerPage = 20;
+  const itemsPerPage = 15;
 
-  // Helper pour récupérer le token XSRF des cookies (Laravel Sanctum)
   const getXsrfToken = () => {
     const cookies = document.cookie.split(";");
     for (let cookie of cookies) {
@@ -44,7 +57,6 @@ function CategoryList() {
     };
   };
 
-  //  Récupération des catégories depuis le Backend
   const fetchCategories = async () => {
     setLoading(true);
     setError(null);
@@ -75,11 +87,12 @@ function CategoryList() {
     fetchCategories();
   }, []);
 
-  //  Gestion de la suppression d'une catégorie
-  const handleDelete = async (id: number) => {
-    if (!window.confirm("Êtes-vous sûr de vouloir supprimer cette catégorie ?")) {
+  const handleDelete = async (id: number, categoryName: string) => {
+    if (!window.confirm(`Êtes-vous sûr de vouloir supprimer la catégorie "${categoryName}" ?`)) {
       return;
     }
+
+    setDeletingId(id);
 
     try {
       const response = await fetch(`${API_BASE_URL}/admin/categories/${id}`, {
@@ -98,27 +111,27 @@ function CategoryList() {
     } catch (err) {
       console.error("Erreur lors de la suppression :", err);
       alert("Impossible de joindre le serveur pour supprimer.");
+    } finally {
+      setDeletingId(null);
     }
   };
 
-  // Filtrage dynamique des catégories par nom
+  // Filtrage
   const filteredCategories = categories.filter((category) =>
     category.name.toLowerCase().includes(searchTerm.trim().toLowerCase())
   );
 
-  // CALCUL DES CATÉGORIES POUR LA PAGE ACTIVE
+  // Pagination
   const totalPages = Math.ceil(filteredCategories.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const paginatedCategories = filteredCategories.slice(startIndex, endIndex);
 
-  // Remise à la première page lors de la saisie d'une recherche
   const handleSearchChange = (value: string) => {
     setSearchTerm(value);
     setCurrentPage(1);
   };
 
-  // Helper dynamique pour construire l'URL de l'image
   const getImageUrl = (category: Category) => {
     if (category.image_url) return category.image_url;
 
@@ -139,213 +152,251 @@ function CategoryList() {
       return `${STORAGE_BASE_URL}/storage/${cleanPath}`;
     }
 
-    return "/src/assets/myy.jpeg";
+    return null;
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-4xl font-bold text-center mb-8 text-gray-800">
-        Liste des Catégories
-      </h1>
-
-      {/* Header Actions & Recherche */}
-      <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
-        <div className="flex items-center gap-3 w-full md:w-auto">
-          <Link
-            to="/admin/dashboard"
-            className="focus:outline-black text-white  py-2.5 px-4 rounded-lg bg-gray-600 hover:bg-gray-400 transition duration-300"
-          >
-            Retour
-          </Link>
-          
-          <Link to="/admin/add-category">
-            <button className="bg-gray-600 text-white px-4 py-2.5 rounded-lg hover:bg-gray-400 transition duration-300">
-              Ajouter une catégorie
-            </button>
-          </Link>
+    <div className="space-y-6">
+      {/* En-tête / Statistiques */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-4 flex items-center justify-between">
+          <div>
+            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+              Total Catégories
+            </p>
+            <p className="text-2xl font-bold text-slate-900 mt-0.5">{categories.length}</p>
+          </div>
+          <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl">
+            <FolderTree size={20} />
+          </div>
         </div>
 
-        {/* Champ de Recherche */}
-        <div className="relative w-full md:w-72">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <svg
-              className="h-4 w-4 text-gray-400"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
+        <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-4 flex items-center justify-between">
+          <div>
+            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+              Résultats de recherche
+            </p>
+            <p className="text-2xl font-bold text-slate-900 mt-0.5">{filteredCategories.length}</p>
           </div>
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => handleSearchChange(e.target.value)}
-            placeholder="Rechercher une catégorie..."
-            className="w-full pl-9 pr-8 py-2 text-sm bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-          />
-          {searchTerm && (
-            <button
-              onClick={() => handleSearchChange("")}
-              className="absolute inset-y-0 right-0 pr-2.5 flex items-center text-gray-400 hover:text-gray-600"
-            >
-              ✕
-            </button>
-          )}
+          <div className="p-2.5 bg-slate-200/60 text-slate-600 rounded-xl">
+            <Search size={20} />
+          </div>
         </div>
       </div>
 
+      {/* Barre d'action & Recherche */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+        {/* Navigation & Création */}
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <Link
+            to="/admin/dashboard"
+            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors"
+          >
+            <ArrowLeft size={14} />
+            <span>Retour</span>
+          </Link>
+
+          <Link
+            to="/admin/add-category"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-colors shadow-xs"
+          >
+            <Plus size={15} />
+            <span>Ajouter une catégorie</span>
+          </Link>
+        </div>
+
+        {/* Champ de recherche & rafraîchissement */}
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              placeholder="Rechercher une catégorie..."
+              className="w-full pl-9 pr-8 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none"
+            />
+            {searchTerm && (
+              <button
+                onClick={() => handleSearchChange("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+
+          <button
+            onClick={fetchCategories}
+            className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-colors"
+            title="Actualiser"
+          >
+            <RefreshCw size={16} className={loading ? "animate-spin text-indigo-600" : ""} />
+          </button>
+        </div>
+      </div>
+
+      {/* Alerte d'erreur */}
       {error && (
-        <div className="mb-4 p-4 bg-red-500 text-white rounded-lg text-center font-medium">
-          {error}
+        <div className="p-3.5 bg-rose-50 border border-rose-100 text-rose-700 rounded-xl text-xs flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <AlertCircle size={16} />
+            <span>{error}</span>
+          </div>
+          <button
+            onClick={fetchCategories}
+            className="px-2.5 py-1 bg-rose-100 hover:bg-rose-200 text-rose-800 font-semibold rounded-lg text-[11px]"
+          >
+            Réessayer
+          </button>
         </div>
       )}
 
-      {/* Tableau d'affichage */}
-      <div className="overflow-x-auto bg-white rounded-lg shadow">
-        <table className="w-full table-auto">
-          <thead>
-            <tr className="bg-gray-600 text-white uppercase  leading-normal">
-              <th className="py-3 px-6 text-left">ID</th>
-              <th className="py-3 px-6 text-left">Image</th>
-              <th className="py-3 px-6 text-left">Nom de la catégorie</th>
-              <th className="py-3 px-6 text-center">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="text-gray-600 text-sm">
-            {loading ? (
+      {/* Tableau des Catégories */}
+      <div className="bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-sm">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs text-slate-600">
+            <thead className="bg-slate-50/80 text-slate-500 font-bold uppercase tracking-wider border-b border-slate-100">
               <tr>
-                <td colSpan={4} className="py-6 text-center text-gray-500">
-                  Chargement des catégories...
-                </td>
+                <th className="py-3.5 px-4 w-20">ID</th>
+                <th className="py-3.5 px-4">Visuel</th>
+                <th className="py-3.5 px-4">Nom de la catégorie</th>
+                <th className="py-3.5 px-4 text-right">Actions</th>
               </tr>
-            ) : filteredCategories.length === 0 ? (
-              <tr>
-                <td colSpan={4} className="py-8 text-center text-gray-500 space-y-2">
-                  <p>
-                    {searchTerm
-                      ? `Aucune catégorie ne correspond à la recherche "${searchTerm}".`
-                      : "Aucune catégorie trouvée dans la base de données."}
-                  </p>
-                  {searchTerm && (
-                    <button
-                      onClick={() => handleSearchChange("")}
-                      className="text-xs font-semibold text-blue-500 hover:underline"
-                    >
-                      Effacer la recherche
-                    </button>
-                  )}
-                </td>
-              </tr>
-            ) : (
-              /* Rendu dynamique des 20 catégories paginées */
-              paginatedCategories.map((category) => (
-                <tr
-                  key={category.id}
-                  className="border-b border-gray-200 hover:bg-gray-100 transition-colors"
-                >
-                  <td className="py-3 px-6 text-left font-medium">{category.id}</td>
-                  <td className="py-3 px-6 text-left">
-                    <img
-                      src={getImageUrl(category)}
-                      alt={category.name}
-                      className="w-20 h-20 rounded-lg object-cover border border-gray-200"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = "/src/assets/myy.jpeg";
-                      }}
-                    />
-                  </td>
-                  <td className="py-3 px-6 text-left font-semibold text-gray-800">
-                    {category.name}
-                  </td>
-                  <td className="py-3 px-6 text-center">
-                    <div className="flex justify-center items-center space-x-3">
-                      <Link
-                        to={`/admin/update-category/${category.id}`}
-                        className="transform hover:text-blue-500 hover:scale-110 transition-transform"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          width={20}
-                          height={20}
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                          />
-                        </svg>
-                      </Link>
-
-                      <button
-                        onClick={() => handleDelete(category.id)}
-                        className="transform hover:text-red-500 hover:scale-110 transition-transform"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width={20}
-                          height={20}
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                          />
-                        </svg>
-                      </button>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {loading ? (
+                <tr>
+                  <td colSpan={4} className="py-12 text-center text-slate-400 font-medium">
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <RefreshCw className="animate-spin text-indigo-600" size={24} />
+                      <span>Chargement des catégories...</span>
                     </div>
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : filteredCategories.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="py-12 text-center text-slate-400 space-y-2">
+                    <p className="font-medium text-slate-500">
+                      {searchTerm
+                        ? `Aucune catégorie ne correspond à "${searchTerm}"`
+                        : "Aucune catégorie trouvée."}
+                    </p>
+                    {searchTerm && (
+                      <button
+                        onClick={() => handleSearchChange("")}
+                        className="text-xs font-semibold text-indigo-600 hover:underline"
+                      >
+                        Effacer la recherche
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ) : (
+                paginatedCategories.map((category) => {
+                  const imgUrl = getImageUrl(category);
+
+                  return (
+                    <tr key={category.id} className="hover:bg-slate-50/60 transition-colors">
+                      {/* ID */}
+                      <td className="py-3 px-4 font-semibold text-slate-400">
+                        #{category.id}
+                      </td>
+
+                      {/* Aperçu Image */}
+                      <td className="py-3 px-4">
+                        {imgUrl ? (
+                          <img
+                            src={imgUrl}
+                            alt={category.name}
+                            className="w-12 h-12 rounded-xl object-cover border border-slate-200/80 bg-slate-50"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = "none";
+                              (e.target as HTMLImageElement).nextElementSibling?.classList.remove("hidden");
+                            }}
+                          />
+                        ) : null}
+                        <div
+                          className={`w-12 h-12 rounded-xl border border-slate-200 bg-slate-100 text-slate-400 flex items-center justify-center ${
+                            imgUrl ? "hidden" : ""
+                          }`}
+                        >
+                          <ImageOff size={18} />
+                        </div>
+                      </td>
+
+                      {/* Nom */}
+                      <td className="py-3 px-4">
+                        <span className="font-bold text-slate-900 text-sm">
+                          {category.name}
+                        </span>
+                      </td>
+
+                      {/* Actions */}
+                      <td className="py-3 px-4 text-right whitespace-nowrap">
+                        <div className="flex items-center justify-end gap-1">
+                          <Link
+                            to={`/admin/update-category/${category.id}`}
+                            className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                            title="Modifier"
+                          >
+                            <Edit3 size={16} />
+                          </Link>
+
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(category.id, category.name)}
+                            disabled={deletingId === category.id}
+                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors disabled:opacity-50"
+                            title="Supprimer"
+                          >
+                            {deletingId === category.id ? (
+                              <RefreshCw size={16} className="animate-spin text-rose-600" />
+                            ) : (
+                              <Trash2 size={16} />
+                            )}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      {/*  CONTRÔLES DE PAGINATION */}
+      {/* Pagination */}
       {!loading && !error && filteredCategories.length > 0 && (
-        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6">
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-3 pt-2 text-xs text-slate-500">
           <div>
-            <span className="text-sm text-gray-600">
-              Affichage de {filteredCategories.length > 0 ? startIndex + 1 : 0} à{" "}
-              {Math.min(endIndex, filteredCategories.length)} sur {filteredCategories.length} catégorie(s)
-            </span>
+            Affichage de <span className="font-semibold text-slate-800">{startIndex + 1}</span> à{" "}
+            <span className="font-semibold text-slate-800">{Math.min(endIndex, filteredCategories.length)}</span> sur{" "}
+            <span className="font-semibold text-slate-800">{filteredCategories.length}</span> catégorie(s)
           </div>
 
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center gap-1.5">
             <button
               type="button"
               onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
               disabled={currentPage === 1}
-              className="px-3 py-1.5 rounded-md bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-sm transition"
+              className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
-              Précédent
+              <ChevronLeft size={16} />
             </button>
 
-            <span className="text-sm text-gray-700 font-medium px-2">
-              Page {currentPage} sur {totalPages || 1}
+            <span className="px-3 py-1 font-semibold text-slate-700 bg-slate-100 rounded-lg">
+              {currentPage} / {totalPages || 1}
             </span>
 
             <button
               type="button"
               onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
               disabled={currentPage >= totalPages}
-              className="px-3 py-1.5 rounded-md bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-sm transition"
+              className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
-              Suivant
+              <ChevronRight size={16} />
             </button>
           </div>
         </div>

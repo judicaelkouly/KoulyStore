@@ -1,10 +1,31 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import {
+  Search,
+  RefreshCw,
+  ShoppingBag,
+  User,
+  MapPin,
+  Phone,
+  CreditCard,
+  CheckCircle2,
+  Clock,
+  ChevronLeft,
+  ChevronRight,
+  X,
+  AlertCircle,
+  Eye,
+  ArrowLeft,
+  ImageOff,
+  PackageCheck,
+  Bell
+} from "lucide-react";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
 const STORAGE_BASE_URL = API_BASE_URL.replace(/\/api\/?$/, "");
 
 // Interfaces TypeScript
-export interface User {
+export interface UserData {
   id: number;
   name?: string;
   username?: string;
@@ -52,7 +73,7 @@ export interface OrderData {
   is_read?: boolean | number;
   created_at: string;
   updated_at: string;
-  user?: User;
+  user?: UserData;
   items?: OrderItem[];
 }
 
@@ -64,15 +85,15 @@ function OrderList({ onOrdersUpdated }: OrderListProps) {
   const [orders, setOrders] = useState<OrderData[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   // État pour la barre de recherche
   const [searchTerm, setSearchTerm] = useState<string>("");
 
-  //  GESTION DE LA PAGINATION (20 par page)
+  // Gestion de la pagination (20 par page)
   const [currentPage, setCurrentPage] = useState<number>(1);
   const itemsPerPage = 20;
 
-  // État pour la modale de détails de la commande
+  // Modale de détails
   const [selectedOrder, setSelectedOrder] = useState<OrderData | null>(null);
 
   // Helper pour formater et valider les URLs d'images Laravel
@@ -134,7 +155,7 @@ function OrderList({ onOrdersUpdated }: OrderListProps) {
     return null;
   };
 
-  // Utilitaire pour récupérer le Cookie XSRF-TOKEN
+  // Utilitaire Cookie XSRF-TOKEN
   const getXsrfToken = () => {
     const cookies = document.cookie.split(";");
     for (let cookie of cookies) {
@@ -146,7 +167,7 @@ function OrderList({ onOrdersUpdated }: OrderListProps) {
     return "";
   };
 
-  // Chargement des commandes depuis l'API
+  // Chargement des commandes
   const fetchOrders = async () => {
     setLoading(true);
     setError(null);
@@ -189,7 +210,7 @@ function OrderList({ onOrdersUpdated }: OrderListProps) {
     fetchOrders();
   }, []);
 
-  // Marquer une commande comme lue au clic
+  // Marquer comme lue au clic
   const handleMarkAsRead = async (order: OrderData) => {
     if (!order.is_read) {
       try {
@@ -206,12 +227,10 @@ function OrderList({ onOrdersUpdated }: OrderListProps) {
           credentials: "include",
         });
 
-        // Mettre à jour l'état local
         setOrders((prev) =>
           prev.map((o) => (o.id === order.id ? { ...o, is_read: true } : o))
         );
 
-        // Notifier le composant parent
         if (onOrdersUpdated) {
           onOrdersUpdated();
         }
@@ -223,7 +242,7 @@ function OrderList({ onOrdersUpdated }: OrderListProps) {
     setSelectedOrder(order);
   };
 
-  // Filtrage en temps réel selon le numéro de commande, nom ou téléphone
+  // Filtrage
   const filteredOrders = orders.filter((order) => {
     const query = searchTerm.trim().toLowerCase();
     if (!query) return true;
@@ -239,17 +258,18 @@ function OrderList({ onOrdersUpdated }: OrderListProps) {
     );
   });
 
-  //  CALCUL DES COMMANDES POUR LA PAGE ACTIVE
+  // Pagination
   const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const paginatedOrders = filteredOrders.slice(startIndex, endIndex);
 
-  // Remise à la première page lors d'une recherche
   const handleSearchChange = (value: string) => {
     setSearchTerm(value);
     setCurrentPage(1);
   };
+
+  const unreadCount = orders.filter((o) => !o.is_read).length;
 
   // Badge du moyen de paiement
   const renderPaymentBadge = (method?: string) => {
@@ -257,130 +277,150 @@ function OrderList({ onOrdersUpdated }: OrderListProps) {
 
     if (m.includes("wave")) {
       return (
-        <span className="px-2.5 py-1 text-xs font-bold rounded-lg bg-sky-100 text-sky-800 border border-sky-200">
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-sky-50 text-sky-700 border border-sky-200/80">
           Wave
         </span>
       );
     }
     if (m.includes("orange") || m.includes("om")) {
       return (
-        <span className="px-2.5 py-1 text-xs font-bold rounded-lg bg-orange-100 text-orange-800 border border-orange-200">
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-orange-50 text-orange-700 border border-orange-200/80">
           Orange Money
         </span>
       );
     }
     if (m.includes("mtn") || m.includes("momo")) {
       return (
-        <span className="px-2.5 py-1 text-xs font-bold rounded-lg bg-yellow-100 text-yellow-800 border border-blue-200">
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-amber-50 text-amber-700 border border-amber-200/80">
           MTN Money
         </span>
       );
     }
     if (m.includes("card") || m.includes("carte") || m.includes("stripe")) {
       return (
-        <span className="px-2.5 py-1 text-xs font-bold rounded-lg bg-purple-100 text-purple-800 border border-purple-200">
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-purple-50 text-purple-700 border border-purple-200/80">
           Carte Bancaire
         </span>
       );
     }
     if (m.includes("cash") || m.includes("livraison")) {
       return (
-        <span className="px-2.5 py-1 text-xs font-bold rounded-lg bg-emerald-100 text-emerald-800 border border-emerald-200">
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200/80">
           À la livraison
         </span>
       );
     }
 
     return (
-      <span className="px-2.5 py-1 text-xs font-medium rounded-lg bg-gray-100 text-gray-700 border border-gray-200">
+      <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-100 text-slate-600 border border-slate-200/80">
         {method || "Non spécifié"}
       </span>
     );
   };
 
-  if (loading) {
-    return (
-      <div className="py-16 text-center text-gray-500 font-medium">
-        <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-indigo-600 border-t-transparent mb-3"></div>
-        <p className="text-sm">Chargement des commandes en cours...</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6 relative">
-      {/* Affichage d'erreur */}
-      {error && (
-        <div className="p-4  text-red-700 text-sm rounded-xl flex items-center justify-between">
-          <span>{error}</span>
-          <button
-            onClick={() => setError(null)}
-            className="font-bold text-red-700 ml-4 hover:underline"
+    <div className="space-y-6">
+      {/* Statistiques rapides */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-4 flex items-center justify-between">
+          <div>
+            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+              Total Commandes
+            </p>
+            <p className="text-2xl font-bold text-slate-900 mt-0.5">{orders.length}</p>
+          </div>
+          <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl">
+            <ShoppingBag size={20} />
+          </div>
+        </div>
+
+        <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-4 flex items-center justify-between">
+          <div>
+            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+              Non lues
+            </p>
+            <p className="text-2xl font-bold text-slate-900 mt-0.5">{unreadCount}</p>
+          </div>
+          <div className="p-2.5 bg-amber-50 text-amber-600 rounded-xl">
+            <Bell size={20} />
+          </div>
+        </div>
+      </div>
+
+      {/* Barre d'action & Recherche */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+        {/* Navigation */}
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <Link
+            to="/admin/dashboard"
+            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors"
           >
-            Fermer
-          </button>
-        </div>
-      )}
-
-      {/* Top Header avec Barre de Recherche */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-200 pb-4">
-        <div>
-          <h2 className="text-xl font-bold text-gray-900">
-            Liste des Commandes
-          </h2>
-          <p className="text-sm text-gray-500 mt-1">
-            Gérez et suivez l'état des dernières commandes récentes.
-          </p>
+            <ArrowLeft size={14} />
+            <span>Retour</span>
+          </Link>
         </div>
 
-        <div className="flex items-center gap-3">
-          {/* Champ de Recherche */}
+        {/* Recherche et Actualisation */}
+        <div className="flex items-center gap-2 w-full sm:w-auto">
           <div className="relative w-full sm:w-72">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <svg
-                className="h-4 w-4 text-gray-400"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
-            </div>
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => handleSearchChange(e.target.value)}
-              placeholder="Rechercher (N° CMD, Nom...)"
-              className="w-full pl-9 pr-8 py-2 text-sm bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+              placeholder="Rechercher (N° CMD, Nom, Tél)..."
+              className="w-full pl-9 pr-8 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none"
             />
             {searchTerm && (
               <button
                 onClick={() => handleSearchChange("")}
-                className="absolute inset-y-0 right-0 pr-2.5 flex items-center text-gray-400 hover:text-gray-600"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
               >
-                ✕
+                <X size={14} />
               </button>
             )}
           </div>
 
-          <span className="text-xs font-semibold px-3 py-2 bg-gray-100 text-gray-700 rounded-lg border border-gray-200 shrink-0">
-            {filteredOrders.length} / {orders.length}
-          </span>
+          <button
+            onClick={fetchOrders}
+            className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-colors"
+            title="Actualiser"
+          >
+            <RefreshCw size={16} className={loading ? "animate-spin text-indigo-600" : ""} />
+          </button>
         </div>
       </div>
 
-      {/* Container de la Liste */}
-      {filteredOrders.length === 0 ? (
-        <div className="text-center py-12 bg-white rounded-xl border border-gray-200 space-y-3">
-          <p className="text-gray-500 text-sm">
+      {/* Message d'erreur */}
+      {error && (
+        <div className="p-3.5 bg-rose-50 border border-rose-100 text-rose-700 rounded-xl text-xs flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <AlertCircle size={16} />
+            <span>{error}</span>
+          </div>
+          <button
+            onClick={fetchOrders}
+            className="px-2.5 py-1 bg-rose-100 hover:bg-rose-200 text-rose-800 font-semibold rounded-lg text-[11px]"
+          >
+            Réessayer
+          </button>
+        </div>
+      )}
+
+      {/* Container Liste des Commandes */}
+      {loading ? (
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-12 text-center text-slate-400">
+          <div className="flex flex-col items-center justify-center gap-2">
+            <RefreshCw className="animate-spin text-indigo-600" size={24} />
+            <span className="text-xs font-medium">Chargement des commandes...</span>
+          </div>
+        </div>
+      ) : filteredOrders.length === 0 ? (
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-12 text-center space-y-2">
+          <p className="text-xs font-medium text-slate-500">
             {searchTerm
-              ? `Aucune commande ne correspond à la recherche "${searchTerm}".`
-              : "Aucune commande enregistrée dans la base de données."}
+              ? `Aucune commande ne correspond à "${searchTerm}"`
+              : "Aucune commande enregistrée."}
           </p>
           {searchTerm && (
             <button
@@ -392,8 +432,7 @@ function OrderList({ onOrdersUpdated }: OrderListProps) {
           )}
         </div>
       ) : (
-        <div className="space-y-4">
-          {/* Rendu dynamique des 20 commandes paginées */}
+        <div className="space-y-3">
           {paginatedOrders.map((order) => {
             const orderId = order.order_number || `#${order.id}`;
             const amount = Number(order.total_amount || 0);
@@ -424,19 +463,19 @@ function OrderList({ onOrdersUpdated }: OrderListProps) {
               <div
                 key={order.id}
                 onClick={() => handleMarkAsRead(order)}
-                className={`rounded-xl border transition-all duration-200 p-5 grid grid-cols-1 md:grid-cols-12 gap-4 items-center cursor-pointer ${
+                className={`group rounded-2xl border transition-all duration-200 p-4 grid grid-cols-1 md:grid-cols-12 gap-4 items-center cursor-pointer ${
                   isUnread
-                    ? "bg-blue-50/40 border-blue-300 shadow-sm hover:shadow-md ring-1 ring-blue-200"
-                    : "bg-white border-gray-200 shadow-sm hover:shadow-md hover:bg-gray-50/50"
+                    ? "bg-indigo-50/40 border-indigo-200/80 hover:bg-indigo-50/70"
+                    : "bg-white border-slate-200/80 hover:border-slate-300 hover:bg-slate-50/50"
                 }`}
               >
-                {/* 1. Image + Infos Produit / ID (Col 5) */}
-                <div className="md:col-span-5 flex items-center space-x-4">
-                  <div className="w-20 h-20 rounded-xl bg-gray-100 border border-gray-200 flex items-center justify-center shrink-0 overflow-hidden relative shadow-xs">
+                {/* 1. Visuel + Nom & Articles (Col 5) */}
+                <div className="md:col-span-5 flex items-center space-x-3.5">
+                  <div className="w-14 h-14 rounded-xl bg-slate-100 border border-slate-200/80 flex items-center justify-center shrink-0 overflow-hidden relative">
                     {firstItemImage ? (
                       <img
                         src={firstItemImage}
-                        alt="Aperçu produit"
+                        alt="Produit"
                         className="w-full h-full object-cover"
                         onError={(e) => {
                           (e.target as HTMLElement).style.display = "none";
@@ -445,21 +484,8 @@ function OrderList({ onOrdersUpdated }: OrderListProps) {
                       />
                     ) : null}
 
-                    <div className={`flex items-center justify-center ${firstItemImage ? "hidden" : ""}`}>
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-8 w-8 text-gray-400"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={1.5}
-                          d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
-                        />
-                      </svg>
+                    <div className={`flex items-center justify-center text-slate-400 ${firstItemImage ? "hidden" : ""}`}>
+                      <ImageOff size={20} />
                     </div>
                   </div>
 
@@ -469,79 +495,79 @@ function OrderList({ onOrdersUpdated }: OrderListProps) {
                         {orderId}
                       </span>
                       {isUnread && (
-                        <span className="bg-blue-600 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider animate-pulse">
+                        <span className="bg-indigo-600 text-white text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider">
                           Nouveau
                         </span>
                       )}
                     </div>
 
                     {items.length === 0 ? (
-                      <p className="font-semibold text-gray-800 text-sm italic">
+                      <p className="font-semibold text-slate-400 text-xs italic">
                         Aucun article
                       </p>
                     ) : (
                       items.map((item, idx) => (
-                        <div key={item.id || idx} className="flex items-center flex-wrap gap-1.5 text-sm">
-                          <span className="font-semibold text-gray-800 truncate">
+                        <div key={item.id || idx} className="flex items-center flex-wrap gap-1.5 text-xs">
+                          <span className="font-semibold text-slate-800 truncate">
                             {item.product_title}
                           </span>
                           {item.quantity > 1 && (
-                            <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100">
+                            <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded-md border border-indigo-100">
                               x{item.quantity}
                             </span>
                           )}
                           {item.size && (
-                            <span className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md">
+                            <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200/80 px-1.5 py-0.5 rounded-md">
                               Taille: {item.size}
                             </span>
                           )}
                         </div>
                       ))
                     )}
-                    <p className="text-xs text-gray-400">{orderDate}</p>
+                    <p className="text-[11px] text-slate-400">{orderDate}</p>
                   </div>
                 </div>
 
                 {/* 2. Infos Client / Adresse (Col 3) */}
-                <div className="md:col-span-3 text-sm">
-                  <p className="font-semibold text-gray-900">{clientName}</p>
-                  <p className="text-xs text-gray-500 truncate mt-0.5">
-                    {address}, {city}
-                  </p>
+                <div className="md:col-span-3 text-xs space-y-0.5">
+                  <p className="font-bold text-slate-900">{clientName}</p>
+                  <p className="text-slate-500 truncate">{address}, {city}</p>
                   {phone && (
-                    <p className="text-xs font-mono text-gray-400 mt-0.5">
-                      {phone}
-                    </p>
+                    <p className="font-mono text-slate-400 text-[11px]">{phone}</p>
                   )}
                 </div>
 
                 {/* 3. Moyen de Paiement (Col 2) */}
                 <div className="md:col-span-2 text-left md:text-center">
-                  <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1 block md:hidden">
+                  <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1 block md:hidden">
                     Paiement
                   </p>
                   {renderPaymentBadge(order.payment_method)}
                 </div>
 
                 {/* 4. Montant & Statut (Col 2) */}
-                <div className="md:col-span-2 flex items-center justify-between md:justify-end gap-3 border-t md:border-t-0 pt-3 md:pt-0 border-gray-100">
+                <div className="md:col-span-2 flex items-center justify-between md:justify-end gap-3 border-t md:border-t-0 pt-2.5 md:pt-0 border-slate-100">
                   <div className="text-left md:text-right">
-                    <p className="text-base font-bold text-gray-900">
+                    <p className="text-sm font-bold text-slate-900">
                       {amount.toLocaleString("fr-FR")} FCFA
                     </p>
-                    <div className="mt-1">
+                    <div className="mt-0.5">
                       {isPaid ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 text-[11px] font-semibold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/80">
+                          <CheckCircle2 size={12} />
                           Payé
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 text-[11px] font-semibold rounded-full bg-amber-50 text-amber-700 border border-amber-200">
-                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold rounded-full bg-amber-50 text-amber-700 border border-amber-200/80">
+                          <Clock size={12} />
                           En attente
                         </span>
                       )}
                     </div>
+                  </div>
+
+                  <div className="text-slate-300 group-hover:text-indigo-600 transition-colors hidden sm:block">
+                    <Eye size={18} />
                   </div>
                 </div>
               </div>
@@ -550,112 +576,121 @@ function OrderList({ onOrdersUpdated }: OrderListProps) {
         </div>
       )}
 
-      {/*  CONTRÔLES DE PAGINATION */}
+      {/* Pagination */}
       {!loading && !error && filteredOrders.length > 0 && (
-        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6 pt-4 border-t border-gray-200">
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-3 pt-2 text-xs text-slate-500">
           <div>
-            <span className="text-sm text-gray-600">
-              Affichage de {startIndex + 1} à{" "}
-              {Math.min(endIndex, filteredOrders.length)} sur {filteredOrders.length} commande(s)
-            </span>
+            Affichage de <span className="font-semibold text-slate-800">{startIndex + 1}</span> à{" "}
+            <span className="font-semibold text-slate-800">{Math.min(endIndex, filteredOrders.length)}</span> sur{" "}
+            <span className="font-semibold text-slate-800">{filteredOrders.length}</span> commande(s)
           </div>
 
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center gap-1.5">
             <button
               type="button"
               onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
               disabled={currentPage === 1}
-              className="px-3 py-1.5 rounded-md bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-sm transition"
+              className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
-              Précédent
+              <ChevronLeft size={16} />
             </button>
 
-            <span className="text-sm text-gray-700 font-medium px-2">
-              Page {currentPage} sur {totalPages || 1}
+            <span className="px-3 py-1 font-semibold text-slate-700 bg-slate-100 rounded-lg">
+              {currentPage} / {totalPages || 1}
             </span>
 
             <button
               type="button"
               onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
               disabled={currentPage >= totalPages}
-              className="px-3 py-1.5 rounded-md bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-sm transition"
+              className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
-              Suivant
+              <ChevronRight size={16} />
             </button>
           </div>
         </div>
       )}
 
-      {/* MODALE DÉTAILS DE LA COMMANDE */}
+      {/* Modale Détails de la Commande */}
       {selectedOrder && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4"
           onClick={() => setSelectedOrder(null)}
         >
           <div
-            className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-6 relative max-h-[90vh] overflow-y-auto"
+            className="bg-white rounded-2xl max-w-xl w-full p-6 shadow-xl space-y-5 relative max-h-[90vh] overflow-y-auto border border-slate-100"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Bouton de Fermeture */}
+            {/* Bouton Fermer */}
             <button
               onClick={() => setSelectedOrder(null)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition"
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-100 transition-colors"
             >
-              ✕
+              <X size={18} />
             </button>
 
             {/* En-tête Modale */}
-            <div className="border-b border-gray-200 pb-4">
+            <div className="border-b border-slate-100 pb-4 space-y-1">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-full uppercase">
+                <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-2.5 py-0.5 rounded-full uppercase">
                   Détails Commande
                 </span>
                 {selectedOrder.status?.toLowerCase() === "paid" || selectedOrder.status?.toLowerCase() === "payé" ? (
-                  <span className="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full">
+                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-2.5 py-0.5 rounded-full">
                     Payé
                   </span>
                 ) : (
-                  <span className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1 rounded-full">
+                  <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200/80 px-2.5 py-0.5 rounded-full">
                     En attente
                   </span>
                 )}
               </div>
-              <h3 className="text-2xl font-extrabold text-gray-900 mt-2">
+              <h3 className="text-xl font-bold text-slate-900 pt-1">
                 {selectedOrder.order_number || `#${selectedOrder.id}`}
               </h3>
-              <p className="text-xs text-gray-500 mt-0.5">
+              <p className="text-xs text-slate-400">
                 Passée le {selectedOrder.created_at ? new Date(selectedOrder.created_at).toLocaleString("fr-FR") : "-"}
               </p>
             </div>
 
-            {/* Informations Client & Livraison */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-xl border border-gray-200">
-              <div>
-                <p className="text-xs text-gray-400 font-bold uppercase">Client</p>
-                <p className="text-sm font-bold text-gray-800 mt-0.5">
+            {/* Infos Client & Livraison */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-50/80 p-3.5 rounded-xl border border-slate-200/80 text-xs">
+              <div className="space-y-1">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                  <User size={12} /> Client
+                </p>
+                <p className="font-bold text-slate-800">
                   {selectedOrder.full_name || selectedOrder.user?.name || "Client Anonyme"}
                 </p>
                 {selectedOrder.phone && (
-                  <p className="text-xs font-mono text-gray-600 mt-1">📞 {selectedOrder.phone}</p>
+                  <p className="font-mono text-slate-500 flex items-center gap-1">
+                    <Phone size={11} /> {selectedOrder.phone}
+                  </p>
                 )}
               </div>
-              <div>
-                <p className="text-xs text-gray-400 font-bold uppercase">Adresse de Livraison</p>
-                <p className="text-sm font-bold text-gray-800 mt-0.5">{selectedOrder.shipping_address || "Non renseignée"}</p>
-                <p className="text-xs text-gray-600 mt-0.5">{selectedOrder.city || "Abidjan"}</p>
+              <div className="space-y-1">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                  <MapPin size={12} /> Livraison
+                </p>
+                <p className="font-semibold text-slate-800">{selectedOrder.shipping_address || "Non renseignée"}</p>
+                <p className="text-slate-500">{selectedOrder.city || "Abidjan"}</p>
               </div>
             </div>
 
             {/* Moyen de Paiement */}
-            <div className="flex items-center justify-between bg-gray-50 p-4 rounded-xl border border-gray-200">
-              <span className="text-xs font-bold text-gray-500 uppercase">Moyen de Paiement</span>
+            <div className="flex items-center justify-between bg-slate-50/80 p-3.5 rounded-xl border border-slate-200/80 text-xs">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                <CreditCard size={12} /> Paiement
+              </span>
               <div>{renderPaymentBadge(selectedOrder.payment_method)}</div>
             </div>
 
             {/* Articles Commandés */}
-            <div className="space-y-3">
-              <p className="text-xs text-gray-400 font-bold uppercase">Articles Commandés</p>
-              <div className="space-y-3">
+            <div className="space-y-2.5">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                <PackageCheck size={12} /> Articles ({selectedOrder.items?.length || 0})
+              </p>
+              <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
                 {(selectedOrder.items || []).map((item, idx) => {
                   const img = getItemImage(item);
                   const price = Number(item.unit_price || 0);
@@ -663,9 +698,9 @@ function OrderList({ onOrdersUpdated }: OrderListProps) {
                   return (
                     <div
                       key={item.id || idx}
-                      className="flex items-center gap-4 bg-white p-3 rounded-xl border border-gray-200 shadow-2xs"
+                      className="flex items-center gap-3 bg-white p-2.5 rounded-xl border border-slate-200/80"
                     >
-                      <div className="w-20 h-20 rounded-lg bg-gray-100 border border-gray-200 shrink-0 overflow-hidden relative">
+                      <div className="w-12 h-12 rounded-lg bg-slate-100 border border-slate-200/80 shrink-0 overflow-hidden relative flex items-center justify-center">
                         {img ? (
                           <img
                             src={img}
@@ -673,31 +708,29 @@ function OrderList({ onOrdersUpdated }: OrderListProps) {
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
-                            Pas d'image
-                          </div>
+                          <ImageOff size={16} className="text-slate-400" />
                         )}
                       </div>
 
-                      <div className="flex-1 min-w-0">
-                        <p className="font-bold text-gray-800 text-sm">{item.product_title}</p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className="text-xs text-gray-500 font-medium">
-                            Quantité: <strong className="text-gray-800">{item.quantity}</strong>
+                      <div className="flex-1 min-w-0 text-xs space-y-0.5">
+                        <p className="font-bold text-slate-800 truncate">{item.product_title}</p>
+                        <div className="flex items-center gap-2">
+                          <span className="text-slate-500">
+                            Qté: <strong className="text-slate-800">{item.quantity}</strong>
                           </span>
                           {item.size && (
-                            <span className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md">
+                            <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200/80 px-1.5 py-0.5 rounded-md">
                               Taille: {item.size}
                             </span>
                           )}
                         </div>
-                        <p className="text-xs text-indigo-600 font-semibold mt-1">
+                        <p className="text-indigo-600 font-semibold">
                           {price.toLocaleString("fr-FR")} FCFA / unité
                         </p>
                       </div>
 
                       <div className="text-right">
-                        <p className="text-sm font-extrabold text-gray-900">
+                        <p className="text-xs font-bold text-slate-900">
                           {(price * item.quantity).toLocaleString("fr-FR")} FCFA
                         </p>
                       </div>
@@ -707,10 +740,10 @@ function OrderList({ onOrdersUpdated }: OrderListProps) {
               </div>
             </div>
 
-            {/* Pied de Modale : Total */}
-            <div className="pt-4 border-t border-gray-200 flex items-center justify-between">
-              <span className="text-base font-extrabold text-gray-900">Total de la commande</span>
-              <span className="text-xl font-extrabold text-indigo-600">
+            {/* Total */}
+            <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+              <span className="text-sm font-bold text-slate-800">Total de la commande</span>
+              <span className="text-lg font-bold text-indigo-600">
                 {Number(selectedOrder.total_amount || 0).toLocaleString("fr-FR")} FCFA
               </span>
             </div>
