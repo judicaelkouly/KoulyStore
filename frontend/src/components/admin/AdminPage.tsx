@@ -203,11 +203,11 @@ function AdminPage() {
   };
 
   const navItems = [
-    { id: "dashboard", label: "Dashboard", icon: <FaTachometerAlt /> },
-    { id: "users", label: "Users", icon: <FaUsers /> },
-    { id: "products", label: "Products", icon: <MdOutlineProductionQuantityLimits /> },
+    { id: "dashboard", label: "Tableau de bord", icon: <FaTachometerAlt /> },
+    { id: "users", label: "Clients", icon: <FaUsers /> },
+    { id: "products", label: "Produits", icon: <MdOutlineProductionQuantityLimits /> },
     { id: "categories", label: "Categories", icon: <TbCategoryPlus /> },
-    { id: "orders", label: "Orders", icon: <Package />, badge: unreadOrdersCount },
+    { id: "orders", label: "Commandes", icon: <Package />, badge: unreadOrdersCount },
     { id: "returns", label: "Retours", icon: <FaUndoAlt />, badge: pendingReturnsCount },
     { id: "banner", label: "Bannière", icon: <PiFlagBannerFoldFill /> },
     { id: "analytics", label: "Analytics", icon: <FaChartBar /> },
