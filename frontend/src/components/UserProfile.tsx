@@ -936,9 +936,10 @@ function UserProfile() {
                 <p className="text-xs text-gray-500">
                   {selectedOrder.items?.length || selectedOrder.items_count || 1} article(s)
                 </p>
-                <p className="text-xs text-gray-500">
-                  Effectuée le {selectedOrder.created_at || selectedOrder.date || "N/A"}
+               <p className="text-xs text-gray-500">
+                  Effectuée le: {selectedOrder.created_at ? new Date(selectedOrder.created_at).toLocaleDateString('fr-FR') : selectedOrder.date ? new Date(selectedOrder.date).toLocaleDateString('fr-FR') : "N/A"}
                 </p>
+
                 <p className="text-xs font-semibold text-gray-800">
                   Total: {Number(selectedOrder.total_price || selectedOrder.total_amount || selectedOrder.total || 0).toLocaleString("fr-FR")} FCFA
                 </p>

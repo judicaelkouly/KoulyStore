@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, Link } from "react-router-dom";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
 
-//  Interface OrderItem incluant la taille
 export interface OrderItem {
   id: number | string;
   name: string;
@@ -27,18 +26,29 @@ export interface LocationState {
   source?: 'direct' | 'cart';
 }
 
+interface SuccessData {
+  orderId?: string | number;
+  totalAmount: number;
+  paymentMethod: string;
+  deliveryAddress: string;
+  city: string;
+}
+
 function Payment() {
   const location = useLocation();
   const navigate = useNavigate();
   const state = location.state as LocationState;
 
-  // Récupération des articles passés par la navigation
   const items: OrderItem[] = state?.items || [];
 
   const [paymentMethod, setPaymentMethod] = useState<"wave" | "orange" | "mtn" | "cash">("cash");
   const [loading, setLoading] = useState<boolean>(false);
   const [checkingAuth, setCheckingAuth] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
+  // État pour contrôler l'affichage et les données du Modal de succès
+  const [showSuccessModal, setShowSuccessModal] = useState<boolean>(false);
+  const [successData, setSuccessData] = useState<SuccessData | null>(null);
 
   const [client, setClient] = useState<ClientInfo>({
     fullName: "",
@@ -59,15 +69,12 @@ function Payment() {
     return "";
   };
 
-  //  Redirection si panier vide
   useEffect(() => {
     if (!items || items.length === 0) {
-      alert("Aucun produit sélectionné pour le paiement.");
       navigate("/profile");
     }
   }, [items, navigate]);
 
-  // Vérification de l'authentification et pré-remplissage des infos au chargement
   useEffect(() => {
     const checkUserAuth = async () => {
       try {
@@ -81,12 +88,11 @@ function Payment() {
           credentials: "include",
         });
 
-        // Si l'utilisateur n'est pas connecté (401), redirection fluide vers /login
         if (response.status === 401) {
           navigate("/login", {
             state: {
               from: "/payment",
-              items: items, // On conserve les items pour ne pas les perdre après la connexion
+              items: items,
               message: "Veuillez vous connecter pour finaliser votre commande.",
             },
           });
@@ -124,7 +130,6 @@ function Payment() {
     setClient((prev) => ({ ...prev, [name]: value }));
   };
 
-  //  Soumission à l'API backend avec interception du status 401
   const handlePaymentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -160,7 +165,6 @@ function Payment() {
         body: JSON.stringify(orderPayload),
       });
 
-      // Prise en charge du cas non-authentifié (401)
       if (response.status === 401) {
         navigate("/login", {
           state: {
@@ -179,8 +183,17 @@ function Payment() {
       }
 
       const paymentLabel = paymentMethod === "cash" ? "Espèces à la livraison" : paymentMethod.toUpperCase();
-      alert(`Commande validée avec succès (${paymentLabel}) ! Un e-mail de confirmation vous a été envoyé.`);
-      navigate("/profile");
+
+      // Enregistrement des données de succès et affichage du modal
+      setSuccessData({
+        orderId: data.order_id || data.id,
+        totalAmount: orderTotal,
+        paymentMethod: paymentLabel,
+        deliveryAddress: client.deliveryAddress,
+        city: client.city,
+      });
+      setShowSuccessModal(true);
+
     } catch (err: unknown) {
       console.error("Erreur commande:", err);
       if (err instanceof Error) {
@@ -195,10 +208,9 @@ function Payment() {
 
   if (!items || items.length === 0) return null;
 
-  // Affichage pendant la vérification initiale de session
   if (checkingAuth) {
     return (
-      <div className="py-24 text-center text-gray-500 font-medium bg-slate-50  min-h-screen flex flex-col items-center justify-center">
+      <div className="py-24 text-center text-gray-500 font-medium bg-slate-50 min-h-screen flex flex-col items-center justify-center">
         <div className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-indigo-600 border-t-transparent mb-4"></div>
         <p className="text-sm">Vérification de votre session en cours...</p>
       </div>
@@ -206,9 +218,9 @@ function Payment() {
   }
 
   return (
-    <div className="bg-slate-50  py-12 px-4 sm:px-6 lg:px-8 w-full transition-colors min-h-screen">
-      <div className="max-w-5xl mx-auto bg-white  rounded-3xl shadow-sm border border-gray-100  p-6 md:p-10">
-        <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900  mb-8 tracking-tight flex items-center gap-2">
+    <div className="bg-slate-50 py-12 px-4 sm:px-6 lg:px-8 w-full transition-colors min-h-screen relative">
+      <div className="max-w-5xl mx-auto bg-white rounded-3xl shadow-sm border border-gray-100 p-6 md:p-10">
+        <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 mb-8 tracking-tight flex items-center gap-2">
           <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" className="text-indigo-600" viewBox="0 0 16 16">
             <path d="M11 5.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5z"/>
             <path d="M2 2a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2zm13 2v5H1V4a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1m-1 9H2a1 1 0 0 1-1-1v-1h14v1a1 1 0 0 1-1 1"/>
@@ -217,7 +229,7 @@ function Payment() {
         </h1>
 
         {error && (
-          <div className="mb-6 p-4 text-red-700 text-sm">
+          <div className="mb-6 p-4 text-red-700 bg-red-50 border border-red-200 rounded-xl text-sm">
             {error}
           </div>
         )}
@@ -235,10 +247,8 @@ function Payment() {
                 </span>
                 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  
-                  {/* Option ESPÈCES */}
                   <label className={`border-2 rounded-2xl p-3 sm:p-4 flex flex-col justify-between cursor-pointer transition-all ${
-                    paymentMethod === "cash" ? "border-green-600 bg-green-50/40 " : "border-gray-100 hover:border-gray-300"
+                    paymentMethod === "cash" ? "border-green-600 bg-green-50/40" : "border-gray-100 hover:border-gray-300"
                   }`}>
                     <div className="flex items-center gap-2 mb-2">
                       <input 
@@ -254,7 +264,6 @@ function Payment() {
                     <span className="text-[10px] text-gray-500">À la livraison</span>
                   </label>
 
-                  {/* Option WAVE */}
                   <label className={`border-2 rounded-2xl p-3 sm:p-4 flex flex-col justify-between cursor-pointer transition-all ${
                     paymentMethod === "wave" ? "border-sky-500 bg-sky-50/20" : "border-gray-100 hover:border-gray-300"
                   }`}>
@@ -272,9 +281,8 @@ function Payment() {
                     <span className="text-[10px] text-gray-500">Mobile Money</span>
                   </label>
 
-                  {/* Option ORANGE MONEY */}
                   <label className={`border-2 rounded-2xl p-3 sm:p-4 flex flex-col justify-between cursor-pointer transition-all ${
-                    paymentMethod === "orange" ? "border-orange-500 bg-orange-50/20 " : "border-gray-100 hover:border-gray-300"
+                    paymentMethod === "orange" ? "border-orange-500 bg-orange-50/20" : "border-gray-100 hover:border-gray-300"
                   }`}>
                     <div className="flex items-center gap-2 mb-2">
                       <input 
@@ -285,12 +293,11 @@ function Payment() {
                         onChange={() => setPaymentMethod("orange")}
                         className="text-orange-500 focus:ring-orange-500"
                       />
-                      <span className="font-bold text-xs sm:text-sm text-slate-800 ">Orange</span>
+                      <span className="font-bold text-xs sm:text-sm text-slate-800">Orange</span>
                     </div>
                     <span className="text-[10px] text-gray-500">Orange Money</span>
                   </label>
 
-                  {/* Option MTN */}
                   <label className={`border-2 rounded-2xl p-3 sm:p-4 flex flex-col justify-between cursor-pointer transition-all ${
                     paymentMethod === "mtn" ? "border-amber-500 bg-amber-50/20" : "border-gray-100 hover:border-gray-300"
                   }`}>
@@ -307,13 +314,12 @@ function Payment() {
                     </div>
                     <span className="text-[10px] text-gray-500">MTN MoMo</span>
                   </label>
-
                 </div>
               </div>
 
               {/* INFORMATIONS CLIENT */}
               <div className="border-t border-gray-100 pt-6">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-700 mb-4">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-700 mb-4 block">
                   2. Informations de facturation & livraison
                 </span>
                 
@@ -336,7 +342,7 @@ function Payment() {
                       name="phone"
                       value={client.phone}
                       onChange={handleInputChange}
-                      className="w-full h-11 px-4 border border-gray-200  rounded-xl text-sm outline-none bg-slate-50/50 text-slate-800 focus:border-indigo-500" 
+                      className="w-full h-11 px-4 border border-gray-200 rounded-xl text-sm outline-none bg-slate-50/50 text-slate-800 focus:border-indigo-500" 
                       required
                     />
                   </div>
@@ -347,7 +353,7 @@ function Payment() {
                       name="email"
                       value={client.email}
                       onChange={handleInputChange}
-                      className="w-full h-11 px-4 border border-gray-200 rounded-xl text-sm outline-none bg-slate-50/50 text-slate-800  focus:border-indigo-500" 
+                      className="w-full h-11 px-4 border border-gray-200 rounded-xl text-sm outline-none bg-slate-50/50 text-slate-800 focus:border-indigo-500" 
                       required
                     />
                   </div>
@@ -369,7 +375,7 @@ function Payment() {
                       name="deliveryAddress"
                       value={client.deliveryAddress}
                       onChange={handleInputChange}
-                      className="w-full h-11 px-4 border border-gray-200  rounded-xl text-sm outline-none bg-slate-50/500 text-slate-800 focus:border-indigo-500" 
+                      className="w-full h-11 px-4 border border-gray-200 rounded-xl text-sm outline-none bg-slate-50/50 text-slate-800 focus:border-indigo-500" 
                       required
                     />
                   </div>
@@ -379,10 +385,10 @@ function Payment() {
               <button 
                 type="submit" 
                 disabled={loading}
-                className={`w-full text-white py-4 rounded-xl font-bold text-sm shadow-md active:scale-[0.99] transition-all uppercase tracking-wider mt-4 disabled:opacity-50 ${
+                className={`w-full text-white py-4 rounded-xl font-bold text-sm shadow-md active:scale-[0.99] transition-all uppercase tracking-wider mt-4 disabled:opacity-50 cursor-pointer ${
                   paymentMethod === "cash" 
                     ? "bg-green-600 hover:bg-green-700" 
-                    : "bg-indigo-600 hover:bg-indigo-700 "
+                    : "bg-indigo-600 hover:bg-indigo-700"
                 }`}
               >
                 {loading 
@@ -412,20 +418,20 @@ function Payment() {
                     )}
                   </div>
                   <div className="flex flex-col justify-center min-w-0 flex-1">
-                    <h3 className="font-bold text-xs text-slate-800 dark:text- truncate">{item.name}</h3>
+                    <h3 className="font-bold text-xs text-slate-800 truncate">{item.name}</h3>
                     
                     <div className="flex items-center gap-2 mt-0.5">
                       <p className="text-[11px] text-gray-400">{item.category || "Général"}</p>
                       {item.size && (
-                        <span className="text-[10px] bg-slate-200  text-slate-700 px-1.5 py-0.5 rounded font-bold">
+                        <span className="text-[10px] bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded font-bold">
                           Taille: {item.size}
                         </span>
                       )}
                     </div>
 
                     <div className="flex justify-between items-center mt-1 w-full">
-                      <span className="text-xs font-medium text-gray-500 ">Qté : {item.quantity}</span>
-                      <span className="text-xs font-bold text-indigo-600 ">{(item.price * item.quantity).toLocaleString()} FCFA</span>
+                      <span className="text-xs font-medium text-gray-500">Qté : {item.quantity}</span>
+                      <span className="text-xs font-bold text-indigo-600">{(item.price * item.quantity).toLocaleString()} FCFA</span>
                     </div>
                   </div>
                 </div>
@@ -433,19 +439,19 @@ function Payment() {
             </div>
 
             <div className="space-y-2.5 pt-4 text-xs">
-              <div className="flex justify-between text-gray-500 ">
+              <div className="flex justify-between text-gray-500">
                 <span>Sous-total</span>
-                <span className="font-semibold text-slate-800 ">{itemTotal.toLocaleString()} FCFA</span>
+                <span className="font-semibold text-slate-800">{itemTotal.toLocaleString()} FCFA</span>
               </div>
               <div className="flex justify-between text-gray-500">
                 <span>Frais de livraison ({client.city || "Abidjan"})</span>
-                <span className="font-semibold text-slate-800 ">{deliveryFee.toLocaleString()} FCFA</span>
+                <span className="font-semibold text-slate-800">{deliveryFee.toLocaleString()} FCFA</span>
               </div>
               
               <div className="h-px bg-gray-200 my-2"></div>
               
               <div className="flex justify-between items-baseline text-sm">
-                <span className="font-bold text-slate-800 ">Total Général</span>
+                <span className="font-bold text-slate-800">Total Général</span>
                 <span className="text-lg font-black text-indigo-600">{orderTotal.toLocaleString()} FCFA</span>
               </div>
             </div>
@@ -454,6 +460,66 @@ function Payment() {
 
         </div>
       </div>
+
+      {/* MODAL DE SUCCÈS */}
+      {showSuccessModal && successData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-gray-100 text-center transform transition-all scale-100">
+            
+            {/* Icône de succès */}
+            <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-5 shadow-inner">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+
+            <h2 className="text-2xl font-extrabold text-slate-900 mb-1">Paiement validé !</h2>
+            <p className="text-xs text-gray-500 mb-6">
+              Votre commande a été enregistrée avec succès. Un e-mail de confirmation vous a été envoyé.
+            </p>
+
+            {/* Récapitulatif condensé */}
+            <div className="bg-slate-50 p-4 rounded-2xl text-left space-y-2.5 text-xs text-slate-700 border border-slate-100 mb-6">
+              {successData.orderId && (
+                <div className="flex justify-between">
+                  <span className="text-gray-400">N° de commande :</span>
+                  <span className="font-bold text-slate-900">#{successData.orderId}</span>
+                </div>
+              )}
+              <div className="flex justify-between">
+                <span className="text-gray-400">Montant total :</span>
+                <span className="font-bold text-indigo-600">{successData.totalAmount.toLocaleString()} FCFA</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-400">Mode de paiement :</span>
+                <span className="font-semibold text-slate-800">{successData.paymentMethod}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-400">Adresse de livraison :</span>
+                <span className="font-semibold text-slate-800 truncate max-w-[180px]">{successData.deliveryAddress}, {successData.city}</span>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex flex-col gap-2.5">
+              <Link 
+                to="/" 
+                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-xl text-sm transition-all shadow-md text-center"
+              >
+                Retour à l'accueil
+              </Link>
+              <Link 
+                to="/profile" 
+                className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-3 rounded-xl text-xs transition-all text-center"
+              >
+                Voir mes commandes
+              </Link>
+            </div>
+
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
