@@ -546,12 +546,12 @@ function Products({
               <span className="text-[11px] text-gray-400 line-through leading-none">
                 {Number(product.price).toLocaleString()} FCFA
               </span>
-              <span className="font-extrabold text-indigo-600 text-base sm:text-lg leading-tight">
+              <span className="font-bold text-indigo-600 text-base sm:text-lg leading-tight">
                 {Number(product.promo_price).toLocaleString()} FCFA
               </span>
             </>
           ) : (
-            <span className="font-extrabold text-indigo-600 text-base sm:text-lg leading-tight">
+            <span className="font-bold text-indigo-600 text-base sm:text-lg leading-tight">
               {Number(product.price).toLocaleString()} FCFA
             </span>
           )}
