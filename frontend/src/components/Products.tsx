@@ -399,7 +399,7 @@ function Products({
 
       {/* Squelette de chargement initial */}
       {loading && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
           {Array.from({ length: 12 }).map((_, i) => (
             <div
               key={i}
@@ -439,7 +439,7 @@ function Products({
 
       {!loading && !error && filteredProducts.length > 0 && (
         <>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
             {filteredProducts.map((product) => {
               const hasOffer = Boolean(
                 product.promo_price && Number(product.promo_price) > 0
