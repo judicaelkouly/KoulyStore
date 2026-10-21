@@ -428,7 +428,7 @@ function Details() {
 
                   <div className="flex items-center gap-4 mb-6 bg-slate-50 p-3.5 rounded-2xl w-fit border border-gray-100">
                     <div className="flex items-baseline gap-2">
-                      <span className="text-2xl font-black text-indigo-600">
+                      <span className="text-xl font-black text-indigo-600">
                         {formatPrice(hasOffer ? product.promo_price! : product.price)}
                       </span>
                       {hasOffer && (
