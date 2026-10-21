@@ -638,7 +638,7 @@ function AdminPage() {
         </header>
 
         {/* Zone de contenu dynamique */}
-        <main className="p-4 sm:p-6 flex-1 max-w-7xl w-full mx-auto">
+        <main className="p-4 sm:p-6 flex-1 max-w-8xl w-full mx-auto">
           {renderMainContent()}
         </main>
       </div>
