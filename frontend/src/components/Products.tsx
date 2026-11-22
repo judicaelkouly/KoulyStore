@@ -358,7 +358,7 @@ function Products({
   };
 
   return (
-    <div className="max-w-8xl mx-auto px-4 sm:px-6 py-8 relative">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 relative">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <h1
           className="text-3xl sm:text-4xl font-bold text-slate-800 border-l-4 border-indigo-600 pl-4"
