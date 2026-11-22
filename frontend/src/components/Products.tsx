@@ -400,7 +400,7 @@ function Products({
       {/* Squelette de chargement initial */}
       {loading && (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-          {Array.from({ length: 12 }).map((_, i) => (
+          {Array.from({ length: 3 }).map((_, i) => (
             <div
               key={i}
               className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 animate-pulse"
