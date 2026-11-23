@@ -1,17 +1,75 @@
 @import "tailwindcss"; 
-/* @import url('https://fonts.googleapis.com/css2?family=Smokum&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Redressed&display=swap');
 
 
-.smokum-regular {
-  font-family: "Smokum", serif;
-  font-weight: 400;
-  font-style: normal;
+/*
+From Uiverse.io by SelfMadeSystem - https://uiverse.io/SelfMadeSystem/pretty-treefrog-77
+MIT License, Copyright (c) SelfMadeSystem (SelfMadeSystem)
+*/
+@layer utilities {
+  .yt-dash {
+    animation: ytDashArray 2s ease-in-out infinite,
+      ytDashOffset 2s linear infinite;
+  }
+
+  .yt-spin {
+    animation: ytSpinDashArray 2s ease-in-out infinite,
+      ytSpin 8s ease-in-out infinite,
+      ytDashOffset 2s linear infinite;
+    transform-origin: center;
+  }
 }
 
+@keyframes ytDashArray {
+  0% {
+    stroke-dasharray: 0 1 359 0;
+  }
+  50% {
+    stroke-dasharray: 0 359 1 0;
+  }
+  100% {
+    stroke-dasharray: 359 1 0 0;
+  }
+}
 
-.redressed-regular {
-  font-family: "Redressed", cursive;
-  font-weight: 400;
-  font-style: normal;
-} */
+@keyframes ytSpinDashArray {
+  0% {
+    stroke-dasharray: 270 90;
+  }
+  50% {
+    stroke-dasharray: 0 360;
+  }
+  100% {
+    stroke-dasharray: 270 90;
+  }
+}
+
+@keyframes ytDashOffset {
+  0% {
+    stroke-dashoffset: 365;
+  }
+  100% {
+    stroke-dashoffset: 5;
+  }
+}
+
+@keyframes ytSpin {
+  0% {
+    rotate: 0deg;
+  }
+  12.5%,
+  25% {
+    rotate: 270deg;
+  }
+  37.5%,
+  50% {
+    rotate: 540deg;
+  }
+  62.5%,
+  75% {
+    rotate: 810deg;
+  }
+  87.5%,
+  100% {
+    rotate: 1080deg;
+  }
+}

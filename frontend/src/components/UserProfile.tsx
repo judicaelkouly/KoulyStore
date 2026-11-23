@@ -1,5 +1,5 @@
 import { Package } from "lucide-react";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useId } from "react";
 import { CiLogout } from "react-icons/ci";
 import { FaTachometerAlt, FaStar, FaUser } from "react-icons/fa";
 import { MdShoppingCart } from "react-icons/md";
@@ -93,6 +93,12 @@ export interface CartItem {
 
 function UserProfile() {
   const navigate = useNavigate();
+
+  const uid = useId();
+  const gradY = `yt-grad-y-${uid}`;
+  const gradO = `yt-grad-o-${uid}`;
+  const gradU = `yt-grad-u-${uid}`;
+  
 
   const [user, setUser] = useState<UserData | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
@@ -570,15 +576,19 @@ function UserProfile() {
 
   if (loading) {
   return (
-    <div className="loader fixed inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-xs dark:bg-neutral-950/80">
-      <div className="flex items-center">
-        <svg height="0" width="0" viewBox="0 0 64 64" className="absolute">
+    <div
+      role="status"
+      aria-label="Chargement du profil"
+      className="min-h-[60vh] flex flex-col items-center justify-center gap-3 p-6"
+    >
+      <div className="flex my-[0.25em]">
+        <svg height="0" width="0" viewBox="0 0 64 64" className="absolute" aria-hidden="true">
           <defs>
-            <linearGradient gradientUnits="userSpaceOnUse" y2="2" x2="0" y1="62" x1="0" id="b">
+            <linearGradient gradientUnits="userSpaceOnUse" y2="2" x2="0" y1="62" x1="0" id={gradY}>
               <stop stopColor="#973BED" />
               <stop stopColor="#007CFF" offset="1" />
             </linearGradient>
-            <linearGradient gradientUnits="userSpaceOnUse" y2="0" x2="0" y1="64" x1="0" id="c">
+            <linearGradient gradientUnits="userSpaceOnUse" y2="0" x2="0" y1="64" x1="0" id={gradO}>
               <stop stopColor="#FFC800" />
               <stop stopColor="#F0F" offset="1" />
               <animateTransform
@@ -591,7 +601,7 @@ function UserProfile() {
                 attributeName="gradientTransform"
               />
             </linearGradient>
-            <linearGradient gradientUnits="userSpaceOnUse" y2="2" x2="0" y1="62" x1="0" id="d">
+            <linearGradient gradientUnits="userSpaceOnUse" y2="2" x2="0" y1="62" x1="0" id={gradU}>
               <stop stopColor="#00E0ED" />
               <stop stopColor="#00DA72" offset="1" />
             </linearGradient>
@@ -603,10 +613,9 @@ function UserProfile() {
             strokeLinejoin="round"
             strokeLinecap="round"
             strokeWidth="8"
-            stroke="url(#b)"
+            stroke={`url(#${gradY})`}
             d="M 54.722656,3.9726563 A 2.0002,2.0002 0 0 0 54.941406,4 h 5.007813 C 58.955121,17.046124 49.099667,27.677057 36.121094,29.580078 a 2.0002,2.0002 0 0 0 -1.708985,1.978516 V 60 H 29.587891 V 31.558594 A 2.0002,2.0002 0 0 0 27.878906,29.580078 C 14.900333,27.677057 5.0448787,17.046124 4.0507812,4 H 9.28125 c 1.231666,11.63657 10.984383,20.554048 22.6875,20.734375 a 2.0002,2.0002 0 0 0 0.02344,0 c 11.806958,0.04283 21.70649,-9.003371 22.730469,-20.7617187 z"
-            className="dash"
-            id="y"
+            className="yt-dash"
             pathLength="360"
           />
         </svg>
@@ -616,31 +625,30 @@ function UserProfile() {
             strokeLinejoin="round"
             strokeLinecap="round"
             strokeWidth="10"
-            stroke="url(#c)"
+            stroke={`url(#${gradO})`}
             d="M 32 32 m 0 -27 a 27 27 0 1 1 0 54 a 27 27 0 1 1 0 -54"
-            className="spin"
-            id="o"
+            className="yt-spin"
             pathLength="360"
           />
         </svg>
 
-        <div className="w-2" />
+        <div className="w-[0.5em]" />
 
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 64 64" height="64" width="64" className="inline-block">
           <path
             strokeLinejoin="round"
             strokeLinecap="round"
             strokeWidth="8"
-            stroke="url(#d)"
+            stroke={`url(#${gradU})`}
             d="M 4,4 h 4.6230469 v 25.919922 c -0.00276,11.916203 9.8364941,21.550422 21.7500001,21.296875 11.616666,-0.240651 21.014356,-9.63894 21.253906,-21.25586 a 2.0002,2.0002 0 0 0 0,-0.04102 V 4 H 56.25 v 25.919922 c 0,14.33873 -11.581192,25.919922 -25.919922,25.919922 a 2.0002,2.0002 0 0 0 -0.0293,0 C 15.812309,56.052941 3.998433,44.409961 4,29.919922 Z"
-            className="dash"
-            id="u"
+            className="yt-dash"
             pathLength="360"
           />
         </svg>
       </div>
+     
     </div>
-  );
+  )
 }
 
   if (!isAuthenticated || !user) {
