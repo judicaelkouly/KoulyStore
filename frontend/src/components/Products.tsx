@@ -49,7 +49,7 @@ function Products({
 
   const [page, setPage] = useState<number>(1);
   const [hasMore, setHasMore] = useState<boolean>(true);
-  const PER_PAGE = 20;
+  const PER_PAGE = 15;
 
   // État pour stocker les notes récupérées dynamiquement
   const [ratingsMap, setRatingsMap] = useState<Record<string | number, { rating: number; count: number }>>({});
